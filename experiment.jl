@@ -61,6 +61,46 @@ function plotCPUt(allfinstance, tmoy)
     legend(loc=4, fontsize ="small")
 end
 
+# --------------------------------------------------------------------------- #
+# Trace les probabilites associees aux classes de reactiveGrasp
+
+function plotProbaRGrasp(proba)
+
+    @assert length(vClasseAlpha) <= 9 "Stop : trop de classes de valeurs de α demandé"
+
+    nClasses = length(proba[1])
+    nAjustement = size(proba,1)
+    data = Array{Float64}(undef,nAjustement,nClasses)
+    for i=1 : nAjustement
+      data[i,:]=proba[i]
+    end
+    X = collect(1:nAjustement)
+
+    @show nAjustement
+    @show proba
+    @show data
+
+    figure("Values of α for 1 run",figsize=(8,5)) # Create a new figure
+
+    name = "Set1" # https://matplotlib.org/gallery/color/colormap_reference.html
+    cmap = get_cmap(name)
+    colors = cmap.colors
+
+    refBottom = zeros(nAjustement)
+    for niveau=1:nClasses
+        if niveau > 1
+            refBottom = refBottom + data[:,niveau-1]
+        end
+        barh(X, data[:,niveau], height=0.6, edgecolor="white", label=vClasseAlpha[niveau], color=colors[niveau], left=refBottom)
+    end
+
+    ylabel("Iteration number when probabilities are updated")
+    xlabel("Probabilities")
+    yticks([1,nAjustement])
+    legend(ncol=length(vClasseAlpha), bbox_to_anchor=(0,1), loc="lower left", fontsize="small")
+
+end
+
 
 # Simulation d'une experimentation numérique  --------------------------
 
