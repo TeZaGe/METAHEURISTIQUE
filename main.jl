@@ -13,23 +13,24 @@ include("livrableEI1.jl")
 # =========================================================================== #
 
 # Loading a SPP instance
-# println("\nLoading...")
-# fname = "Data/didactic.dat"
-# C, A = loadSPP(fname)
+println("\nLoading...")
+fname = "Data/didactic.dat"
+C, A = loadSPP(fname)
 # @show C
 # @show A
 
-# Solving a SPP instance with GLPK
-# println("\nSolving...")
-# solverSelected = GLPK.Optimizer
-# spp = setSPP(C, A)
 
-# set_optimizer(spp, solverSelected)
-# optimize!(spp)
+# Solving a SPP instance with GLPK
+println("\nSolving...")
+solverSelected = GLPK.Optimizer
+spp = setSPP(C, A)
+
+set_optimizer(spp, solverSelected)
+optimize!(spp)
 
 # Displaying the results
-# println("z = ", objective_value(spp))
-# print("x = "); println(value.(spp[:x]))
+println("z = ", objective_value(spp))
+print("x = "); println(value.(spp[:x]))
 
 # =========================================================================== #
 
@@ -40,6 +41,6 @@ include("livrableEI1.jl")
 
 # Testing with a specific instance
 println("\nTesting heuristic solution...")
-fname = "Data/pb_100rnd0100.dat"
+# fname = "Data/didactic.dat"
 solution_heuristique = resoudreSPP(fname)
 @show solution_heuristique

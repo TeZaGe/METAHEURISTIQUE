@@ -10,26 +10,37 @@ include("getfname.jl")
 # le ! dans les fonction pour indiquer que la fonction modifie ses arguments
 
 function resoudreSPP(fname)
-	C, A = loadSPP(fname)
-	@show C
-	@show A
+    C, A = loadSPP(fname)
+    @show C
+    @show A
 
-	# heuristique de construction gloutonne
-	solution_initiale = construction_gloutonne(C, A)
-	
-	# amélioration par descente locale
-    solution_initiale = descente_locale(solution_initiale, C, A)
+    # contrôle du temps CPU
+    t_start = time()
 
-	
-	return solution_initiale
+    # heuristique de construction gloutonne
+    solution_initiale = construction_gloutonne(C, A)
+    println("Solution initiale (gloutonne) : ", solution_initiale)
+
+    # amélioration par descente locale
+    solution_finale = descente_locale(solution_initiale, C, A)
+
+    # valeur ^z (somme des coûts des ensembles sélectionnés)
+    valeur_z = sum(C[solution_finale])
+    println("Valeur ^z : ", valeur_z)
+
+    t_end = time()
+    println("Temps CPU écoulé : ", t_end - t_start, " secondes")
+
+    return solution_finale
 end
 
 function construction_gloutonne(C, A)
     n = length(C)
     solution_final = [] 
     solution = [] 
+    weight = 0
     elements = zeros(Bool, size(A, 1)) # suivi des éléments couverts
-    println(elements)
+    # println(elements)
 
     # on calcule l'utilité de chaque ensemble
     for i in 1:n
@@ -43,25 +54,27 @@ function construction_gloutonne(C, A)
     while !isempty(solution)
         # on prend l'ensemble avec la meilleure utilité
         index, _ = popfirst!(solution)
-        # on vérifie s'il couvre des éléments non encore couverts
-        couvre_nouveau = true
+        # on vérifie s'il y a conflit avec les éléments déjà couverts
+        a_conflit = false
         for j in eachindex(elements)
             if A[j, index] == 1 && elements[j]
-                couvre_nouveau = false # l'ensemble ne couvre pas de nouveaux éléments
+                a_conflit = true # il y a conflit avec un élément déjà couvert
                 break
             end
         end
 
-        # on l'ajoute à la solution s'il n'y a pas de conflit
-        if couvre_nouveau
+        # on l'ajoute à la solution seulement s'il n'y a pas de conflit
+        if !a_conflit
             push!(solution_final, index)
             # on marque toutes ses contraintes comme prises
             for j in eachindex(elements)
                 if A[j, index] == 1
                     elements[j] = true # on marque l'élément comme couvert
+                    weight += C[index] / 2
                 end
             end
             # println("Ajout de l'ensemble $index, Elements couverts : $elements")
+            println("Poids actuel : $weight")
         end
     end
 
@@ -96,15 +109,14 @@ function generer_voisinage_1_1(solution, C, A)
             # Détecter les conflits avec ce candidat
             conflits = detecter_conflits(candidat, solution, A)
 
-            # Si exactement 1 conflit → 1-1 exchange possible
+            # Si exactement 1 conflit 1-1 exchange possible
             if length(conflits) == 1
                 conflit = conflits[1]
-                #
                 nouvelle_solution = setdiff(solution, [conflit]) # Retirer l'ensemble en conflit
                 push!(nouvelle_solution, candidat)
                 push!(voisins, nouvelle_solution)
             end
-            # Si aucun conflit → 0-1 exchange (ajout simple)
+            # Si aucun conflit  0-1 exchange (ajout simple)
             if isempty(conflits)
                 nouvelle_solution = copy(solution)
                 push!(nouvelle_solution, candidat)
@@ -128,7 +140,6 @@ function descente_locale(solution_initiale, C, A)
     # on prend la solution initiale
     solution_courante = solution_initiale
     amelioration = true
-
 
     # on continue tant qu'on trouve une amélioration
     while amelioration
