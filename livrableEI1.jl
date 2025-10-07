@@ -2,6 +2,9 @@
 using JuMP
 using GLPK
 using LinearAlgebra
+
+using CSV
+using DataFrames
 include("loadSPP.jl")
 include("setSPP.jl")
 include("getfname.jl")
@@ -11,27 +14,34 @@ include("getfname.jl")
 
 function resoudreSPP(fname)
     C, A = loadSPP(fname)
-    @show C
-    @show A
+    # @show C
+    # @show A
 
-    # contrôle du temps CPU
+    
     t_start = time()
 
     # heuristique de construction gloutonne
     solution_initiale = construction_gloutonne(C, A)
     println("Solution initiale (gloutonne) : ", solution_initiale)
 
+    valeur_glout = sum(C[i] for i in solution_initiale)
+    println("Valeur gloutonne (z) : ", valeur_glout)
+
     # amélioration par descente locale
     solution_finale = descente_locale(solution_initiale, C, A)
-
-    # valeur ^z (somme des coûts des ensembles sélectionnés)
-    valeur_z = sum(C[solution_finale])
-    println("Valeur ^z : ", valeur_z)
+    valeur_heur = sum(C[i] for i in solution_finale)
 
     t_end = time()
-    println("Temps CPU écoulé : ", t_end - t_start, " secondes")
+    cpu_time = t_end - t_start
 
-    return solution_finale
+    println("Valeur heuristique (^z) : ", valeur_heur)
+    println("Temps CPU total (s): ", cpu_time)
+
+    return (heuristic_solution = solution_finale,
+            heuristic_value = valeur_heur,
+            cpu_time = cpu_time,
+            glout_value = valeur_glout
+            )
 end
 
 function construction_gloutonne(C, A)
@@ -70,11 +80,11 @@ function construction_gloutonne(C, A)
             for j in eachindex(elements)
                 if A[j, index] == 1
                     elements[j] = true # on marque l'élément comme couvert
-                    weight += C[index] / 2
+                    # weight += C[index] / 2
                 end
             end
             # println("Ajout de l'ensemble $index, Elements couverts : $elements")
-            println("Poids actuel : $weight")
+            # println("Poids actuel : $weight")
         end
     end
 
@@ -98,44 +108,61 @@ function detecter_conflits(ensemble_candidat, solution_actuelle, A)
     return conflits
 end
 
-function generer_voisinage_1_1(solution, C, A)
-   
-    voisins = []
-    n = size(A, 2) 
-    
-    # Pour chaque ensemble candidat non utilisé
-    for candidat = 1:n
-        if !(candidat in solution)
-            # Détecter les conflits avec ce candidat
-            conflits = detecter_conflits(candidat, solution, A)
+function generer_voisinage(solution, C, A)
+    voisins = Vector{Vector{Int}}()
+    n = size(A, 2)
+    m = size(A, 1)
 
-            # Si exactement 1 conflit 1-1 exchange possible
-            if length(conflits) == 1
-                conflit = conflits[1]
-                nouvelle_solution = setdiff(solution, [conflit]) # Retirer l'ensemble en conflit
-                push!(nouvelle_solution, candidat)
-                push!(voisins, nouvelle_solution)
-            end
-            # Si aucun conflit  0-1 exchange (ajout simple)
-            if isempty(conflits)
-                nouvelle_solution = copy(solution)
-                push!(nouvelle_solution, candidat)
-                push!(voisins, nouvelle_solution)
+    # Représentation booléenne des ensembles utilisés pour accès rapide
+    utilisés = falses(n)
+    for i in solution
+        utilisés[i] = true
+    end
+
+    # Pré-calcul des lignes couvertes par la solution actuelle
+    couverts = falses(m)
+    for s in solution
+        couverts .|= A[:, s] .== 1
+    end
+
+    # ---- Cas 1 : Ajout (0→1) ----
+    for cand in 1:n
+        if !utilisés[cand]
+            # Vérifie qu’il n’y a pas de conflit
+            conflit = any((A[:, cand] .== 1) .& couverts)
+            if !conflit
+                push!(voisins, vcat(solution, [cand]))
             end
         end
     end
-    
-    # Aussi essayer les 1-0 exchanges (retirer un ensemble)
-    for ensemble in solution
-        nouvelle_solution = setdiff(solution, [ensemble])
-        if !isempty(nouvelle_solution)  # Éviter la solution vide
-            push!(voisins, nouvelle_solution)
+
+    # ---- Cas 2 : Retrait (1→0) ----
+    for s in solution
+        new_sol = setdiff(solution, [s])
+        push!(voisins, new_sol)
+    end
+
+    # ---- Cas 3 : Échange (1→1) ----
+    for s in solution
+        # On retire temporairement s
+        couverts_temp = copy(couverts)
+        couverts_temp .&= .!(A[:, s] .== 1)
+
+        for cand in 1:n
+            if !utilisés[cand]
+                # on vérifie que cand ne crée pas de conflit avec le reste
+                conflit = any((A[:, cand] .== 1) .& couverts_temp)
+                if !conflit
+                    new_sol = setdiff(solution, [s])
+                    push!(new_sol, cand)
+                    push!(voisins, new_sol)
+                end
+            end
         end
     end
-    
+
     return voisins
 end
-
 function descente_locale(solution_initiale, C, A)
     # on prend la solution initiale
     solution_courante = solution_initiale
@@ -144,7 +171,7 @@ function descente_locale(solution_initiale, C, A)
     # on continue tant qu'on trouve une amélioration
     while amelioration
         amelioration = false
-        voisins = generer_voisinage_1_1(solution_courante, C, A)
+        voisins = generer_voisinage(solution_courante, C, A)
         # on évalue chaque voisin
         for voisin in voisins
             # on calcule le coût de la solution courante et du voisin
@@ -162,6 +189,42 @@ function descente_locale(solution_initiale, C, A)
     return solution_courante
 end
 
+function experimentationSPP()
+    dossier = "Data"
+    fichiers = filter(f -> endswith(f, ".dat"), readdir(dossier, join=true))
 
+    resultats = DataFrame(
+        instance = String[],
+        my_solution_glouton = String[],
+        valeur_glouton = Float64[],
+        my_solution = String[],
+        my_z = Float64[],
+        my_cpu_time = Float64[]
+    )
 
+    for fichier in fichiers[1:min(10, length(fichiers))]  # max 10 instances
+        println("\n--- Traitement de l’instance : $(basename(fichier)) ---")
+
+        resultat = resoudreSPP(fichier)
+
+        # Récupération des données retournées par resoudreSPP()
+        solution_glouton = construction_gloutonne(loadSPP(fichier)...) 
+        valeur_glouton = resultat.glout_value
+        solution_finale = resultat.heuristic_solution
+        valeur_finale = resultat.heuristic_value
+        cpu_time = resultat.cpu_time
+
+        push!(resultats, (
+            instance = basename(fichier),
+            my_solution_glouton = join(solution_glouton, ","),
+            valeur_glouton = valeur_glouton,
+            my_solution = join(solution_finale, ","),
+            my_z = valeur_finale,
+            my_cpu_time = cpu_time
+        ))
+    end
+
+    # Sauvegarde CSV
+    CSV.write("resultats_SPP.csv", resultats)
+end
 
