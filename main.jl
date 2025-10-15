@@ -39,4 +39,4 @@ C, A = loadSPP(fname)
 # =========================================================================== #
 # solution_heuristique = resoudreSPP(fname)
 
-experimentationSPP()
+# experimentationSPP()
