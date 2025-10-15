@@ -14,7 +14,7 @@ include("livrableEI1.jl")
 
 # Loading a SPP instance
 println("\nLoading...")
-fname = "Data/pb_100rnd0100.dat"
+fname = "Data/pb_1000rnd0300.dat"
 C, A = loadSPP(fname)
 # @show C
 # @show A

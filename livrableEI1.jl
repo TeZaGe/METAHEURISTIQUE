@@ -10,6 +10,16 @@ include("setSPP.jl")
 include("getfname.jl")
 
 
+#pb_200rnd0700
+#pb_500rnd1500
+#pb_1000rnd0300 z_glouton = 507 ts = 0,91 z_heuristique = 538 ts = 2,59
+#pb_2000rnd0700
+# println("\nLoading...")
+# fname = "Data/pb_1000rnd0300.dat"
+# C, A = loadSPP(fname)
+
+# solution_heuristique = resoudreSPP(fname)
+
 # le ! dans les fonction pour indiquer que la fonction modifie ses arguments
 
 function resoudreSPP(fname)
@@ -35,6 +45,7 @@ function resoudreSPP(fname)
     cpu_time = t_end - t_start
 
     println("Valeur heuristique (^z) : ", valeur_heur)
+    println("Solution finale (heuristique) : ", solution_finale)
     println("Temps CPU total (s): ", cpu_time)
 
     return (heuristic_solution = solution_finale,
@@ -53,15 +64,21 @@ function construction_gloutonne(C, A)
     n = length(C)
     solution_final = [] 
     solution = [] 
-    weight = 0
+    # weight = 0
     elements = zeros(Bool, size(A, 1)) # suivi des éléments couverts
     # println(elements)
 
     # on calcule l'utilité de chaque ensemble
     for i in 1:n
+<<<<<<< HEAD
         push!(solution, (i, utility(i, C, A)))
+=======
+        utility = C[i] / sum(A[:, i])
+        push!(solution, (i, utility))
+        # print("Ensemble $i, utilité : $utility\n")
+>>>>>>> 1162c71b00a604b58c5aafc679564b71531c37d9
     end
-    # on trie les ensembles par utilité décroissante
+    # on trie par utilité décroissante
     sort!(solution, by = x -> x[2], rev = true)
 
     # on parcourt la liste des ensembles triés par utilité 
@@ -185,62 +202,46 @@ function detecter_conflits(ensemble_candidat, solution_actuelle, A)
 end
 
 function generer_voisinage(solution, C, A)
-    voisins = Vector{Vector{Int}}()
-    n = size(A, 2)
-    m = size(A, 1)
+    voisins = []
+    n = size(A, 2) 
+    print
+    compteur11 = 0
+    compteur21 = 0
+    
+    # Pour chaque ensemble candidat non utilisé
+    for candidat = 1:n
+        if !(candidat in solution)
+            # Détecter les conflits avec ce candidat
+            conflits = detecter_conflits(candidat, solution, A)
 
-    # Représentation booléenne des ensembles utilisés pour accès rapide
-    utilisés = falses(n)
-    for i in solution
-        utilisés[i] = true
-    end
-
-    # Pré-calcul des lignes couvertes par la solution actuelle
-    couverts = falses(m)
-    for s in solution
-        couverts .|= A[:, s] .== 1
-    end
-
-    # ---- Cas 1 : Ajout (0→1) ----
-    for cand in 1:n
-        if !utilisés[cand]
-            # Vérifie qu’il n’y a pas de conflit
-            conflit = any((A[:, cand] .== 1) .& couverts)
-            if !conflit
-                push!(voisins, vcat(solution, [cand]))
+            # Si exactement 1 conflit → 1-1 exchange possible
+            if length(conflits) == 1
+                conflit = conflits[1]
+                nouvelle_solution = setdiff(solution, [conflit]) # Retirer l'ensemble en conflit
+                push!(nouvelle_solution, candidat)
+                push!(voisins, nouvelle_solution)
+                compteur11 += 1
             end
-        end
-    end
 
-    # ---- Cas 2 : Retrait (1→0) ----
-    for s in solution
-        new_sol = setdiff(solution, [s])
-        push!(voisins, new_sol)
-    end
-
-    # ---- Cas 3 : Échange (1→1) ----
-    for s in solution
-        # On retire temporairement s
-        couverts_temp = copy(couverts)
-        couverts_temp .&= .!(A[:, s] .== 1)
-
-        for cand in 1:n
-            if !utilisés[cand]
-                # on vérifie que cand ne crée pas de conflit avec le reste
-                conflit = any((A[:, cand] .== 1) .& couverts_temp)
-                if !conflit
-                    new_sol = setdiff(solution, [s])
-                    push!(new_sol, cand)
-                    push!(voisins, new_sol)
-                end
+            # Si exactement 2 conflits → 2-1 exchange possible
+            if(length(conflits)== 2)
+                conflit1 = conflits[1]
+                conflit2 = conflits[2]
+                nouvelle_solution = setdiff(solution, [conflit1, conflit2]) # Retirer l'ensemble en conflit
+                push!(nouvelle_solution, candidat)
+                push!(voisins, nouvelle_solution)
+                compteur21 += 1
             end
-        end
-    end
 
+        end
+    end    
+    println("Généré $compteur11 voisins par 1-1, $compteur21 par 2-1")
     return voisins
 end
+
+
 function descente_locale(solution_initiale, C, A)
-    # on prend la solution initiale
+    # on prend la solution gloutonne 
     solution_courante = solution_initiale
     amelioration = true
 
@@ -248,6 +249,8 @@ function descente_locale(solution_initiale, C, A)
     while amelioration
         amelioration = false
         voisins = generer_voisinage(solution_courante, C, A)
+        println("Nombre de voisins générés : ", length(voisins))
+        # println("voisins : ", voisins)
         # on évalue chaque voisin
         for voisin in voisins
             # on calcule le coût de la solution courante et du voisin
@@ -261,7 +264,6 @@ function descente_locale(solution_initiale, C, A)
             end
         end
     end
-
     return solution_courante
 end
 
