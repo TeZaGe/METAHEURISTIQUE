@@ -44,6 +44,11 @@ function resoudreSPP(fname)
             )
 end
 
+
+function utility(ensemble, C, A)
+    return C[ensemble] / sum(A[:, ensemble])
+end
+
 function construction_gloutonne(C, A)
     n = length(C)
     solution_final = [] 
@@ -54,8 +59,7 @@ function construction_gloutonne(C, A)
 
     # on calcule l'utilité de chaque ensemble
     for i in 1:n
-        utility = C[i] / sum(A[:, i])
-        push!(solution, (i, utility))
+        push!(solution, (i, utility(i, C, A)))
     end
     # on trie les ensembles par utilité décroissante
     sort!(solution, by = x -> x[2], rev = true)
@@ -90,6 +94,78 @@ function construction_gloutonne(C, A)
 
     return solution_final
 end
+
+
+function greedy_randomized_construction(C, A, α=0.3, rcl_size=10)
+    n = length(C)
+    m = size(A, 1)
+    elements = zeros(Bool, m)  # suivi des contraintes couvertes
+    solution_final = []
+    utilitys = []  # liste des (ensemble, utilité) disponibles
+
+    # Initialiser les candidats
+    for i in 1:n
+        push!(utilitys, (i, utility(i, C, A)))
+    end
+
+    while !isempty(utilitys)
+        
+        if isempty(utilitys)
+            break
+        end
+        u_min = minimum(x[2] for x in utilitys)
+        u_max = maximum(x[2] for x in utilitys)
+        uLimit = u_min + α * (u_max - u_min)
+
+        
+        rcl = filter(x -> x[2] >= uLimit, utilitys)
+
+        
+        # Trier par utilité décroissante et prendre les top rcl_size
+        sort!(rcl, by = x -> x[2], rev = true)
+        rcl = rcl[1:rcl_size]
+
+        if isempty(rcl)
+            break
+        end
+
+        selected = rand(rcl)
+        e = selected[1]  
+
+        push!(solution_final, e)
+
+        # Marquer les contraintes couvertes
+        for j in 1:m
+            if A[j, e] == 1
+                elements[j] = true
+            end
+        end
+
+        # retirer ceux en conflit avec e
+        new_utilitys = []
+        for (cand, util) in utilitys
+            if cand == e
+                continue  
+            end
+            
+            # Vérifier si en conflit
+            conflit = false
+            for j in 1:m
+                if A[j, cand] == 1 && elements[j]
+                    conflit = true
+                    break
+                end
+            end
+            if !conflit
+                push!(new_utilitys, (cand, util))
+            end
+        end
+        utilitys = new_utilitys
+    end
+
+    return solution_final
+end
+
 
 function detecter_conflits(ensemble_candidat, solution_actuelle, A)
     conflits = []
