@@ -1,0 +1,341 @@
+\pdfminorversion=4
+\documentclass[]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb,latexsym,amsmath}
+\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\begin{document}
+
+% =====================================================================================
+% Document : rendu du DM1
+% Auteur : Xavier Gandibleux
+% Année académique : 2020-2021
+
+\section*{Livrable de l'exercice d'implémentation  1 : \\ Heuristiques de construction et d'amélioration gloutonnes}
+
+%
+% -----------------------------------------------------------------------------------------------------------------------------------------------------
+%
+
+\vspace{5mm}
+\noindent
+\fbox{
+  \begin{minipage}{0.97 \textwidth}
+    \begin{center}
+      \vspace{1mm}
+      \Large{Formulation du SPP}
+      \vspace{1mm}
+    \end{center}
+  \end{minipage}
+}
+\vspace{2mm}
+
+\noindent
+Présenter la formulation du SPP. %Rechercher et citer 1 situation pratique que modélise le SPP en illustrant.
+
+%
+% -----------------------------------------------------------------------------------------------------------------------------------------------------
+%
+
+\vspace{5mm}
+\noindent
+\fbox{
+  \begin{minipage}{0.97 \textwidth}
+    \begin{center}
+      \vspace{1mm}
+        \Large{Modélisation JuMP (ou GMP) du SPP}
+      \vspace{1mm}
+    \end{center}
+  \end{minipage}
+}
+\vspace{2mm}
+
+\noindent
+Présenter la modélisation JuMP (ou GMP) du SPP.
+
+%
+% -----------------------------------------------------------------------------------------------------------------------------------------------------
+%
+
+\vspace{5mm}
+\noindent
+\fbox{
+  \begin{minipage}{0.97 \textwidth}
+    \begin{center}
+      \vspace{1mm}
+        \Large{Instances numériques de SPP}
+      \vspace{1mm}
+    \end{center}
+  \end{minipage}
+}
+\vspace{2mm}
+
+\noindent
+\begin{table}[h!]
+\centering
+\caption{Voici les 10 instances.}
+\label{tab:instances_list} % Label modifié pour éviter les doublons
+\begin{tabular}{l} % Une seule colonne
+\toprule
+\textbf{Instance} \\
+\midrule
+\texttt{pb\_100rnd0100.dat} \\
+\texttt{pb\_200rnd0100.dat} \\
+\texttt{pb\_500rnd0300.dat} \\
+\texttt{pb\_500rnd1500.dat} \\
+\texttt{pb\_500rnd1700.dat} \\
+\texttt{pb\_200rnd0400.dat} \\
+\texttt{pb\_200rnd0700.dat} \\
+\texttt{pb\_1000rnd0100.dat} \\
+\texttt{pb\_1000rnd0300.dat} \\
+\texttt{didactic.dat} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+
+
+%
+% -----------------------------------------------------------------------------------------------------------------------------------------------------
+%
+
+\vspace{5mm}
+\noindent
+\fbox{
+  \begin{minipage}{0.97 \textwidth}
+    \begin{center}
+      \vspace{1mm}
+        \Large{Heuristique de construction appliquée au SPP}
+      \vspace{1mm}
+    \end{center}
+  \end{minipage}
+}
+\vspace{2mm}
+
+\noindent
+Présenter l'algorithme mis en \oe uvre. Illustrer sur un exemple didactique.
+
+\subsubsection*{Mon heuristique de construction gloutonne (construction\_gloutonne)}
+
+L'heuristique procède comme suit :
+\begin{enumerate}
+    \item Elle calcule d'abord l'utilité de chaque élément (colonne) avec sa fonction d'utilité~:
+    $$ u = \frac{\text{coût}}{\text{nombre de contraintes couvertes}} $$
+    \item Ensuite, elle trie les éléments par ordre décroissant d'utilité.
+    \item Puis, elle parcourt la liste des éléments triés et ajoute chaque élément à la solution si cela ne crée pas de conflit avec les éléments déjà sélectionnés (c'est-à-dire, si aucune des contraintes couvertes par cet élément n'est déjà couverte par la solution partielle).
+\end{enumerate}
+
+\subsubsection*{Illustration sur \texttt{didactic.dat}}
+
+\noindent\textbf{Étape 1 \& 2 : Calcul et Tri des Utilités}
+\begin{itemize}
+    \item Col 6 (Coût=13, Lignes=2) $\rightarrow$ Utilité = 6.5
+    \item Col 7 (Coût=11, Lignes=2) $\rightarrow$ Utilité = 5.5
+    \item Col 1 (Coût=10, Lignes=3) $\rightarrow$ Utilité = 3.33
+    \item Col 4 (Coût=6, Lignes=2) $\rightarrow$ Utilité = 3.0
+    \item Col 5 (Coût=9, Lignes=4) $\rightarrow$ Utilité = 2.25
+    \item Col 3 (Coût=8, Lignes=4) $\rightarrow$ Utilité = 2.0
+    \item Col 9 (Coût=6, Lignes=4) $\rightarrow$ Utilité = 1.5
+    \item Col 2 (Coût=5, Lignes=4) $\rightarrow$ Utilité = 1.25
+    \item Col 8 (Coût=4, Lignes=4) $\rightarrow$ Utilité = 1.0
+\end{itemize}
+
+\noindent\textbf{Étape 3 : Construction}
+
+\noindent Solution initiale = [], Lignes couvertes = []
+\begin{itemize}
+    \item \textbf{Évaluation Col 6} (utilité 6.5)...
+    \begin{itemize}[label=--]
+        \item Action: \textbf{ACCEPTÉE}. (Pas de conflit)
+        \item Solution = [6]
+        \item Lignes couvertes par Col 6: [3, 5]
+        \item Lignes couvertes (Total) = [3, 5]
+    \end{itemize}
+    \item \textbf{Évaluation Col 7} (utilité 5.5)...
+    \begin{itemize}[label=--]
+        \item Action: \textbf{ACCEPTÉE}. (Pas de conflit)
+        \item Solution = [6, 7]
+        \item Lignes couvertes par Col 7: [1, 6]
+        \item Lignes couvertes (Total) = [1, 3, 5, 6]
+    \end{itemize}
+    \item \textbf{Évaluation Col 1} (utilité 3.33)...
+    \begin{itemize}[label=--]
+        \item Action: \textbf{REJETÉE}. (Conflit sur Ligne 1)
+    \end{itemize}
+    \item \textbf{Évaluation Col 4} (utilité 3.0)...
+    \begin{itemize}[label=--]
+        \item Action: \textbf{ACCEPTÉE}. (Pas de conflit)
+        \item Solution = [6, 7, 4]
+        \item Lignes couvertes par Col 4: [4, 7]
+        \item Lignes couvertes (Total) = [1, 3, 4, 5, 6, 7]
+    \end{itemize}
+    \item \textbf{Évaluation Col 5} (utilité 2.25)...
+    \begin{itemize}[label=--]
+        \item Action: \textbf{REJETÉE}. (Conflit sur Ligne 1)
+    \end{itemize}
+    \item \textbf{Évaluation Col 3} (utilité 2.0)...
+    \begin{itemize}[label=--]
+        \item Action: \textbf{REJETÉE}. (Conflit sur Ligne 1)
+    \end{itemize}
+    \item \textbf{Évaluation Col 9} (utilité 1.5)...
+    \begin{itemize}[label=--]
+        \item Action: \textbf{REJETÉE}. (Conflit sur Ligne 3)
+    \end{itemize}
+    \item \textbf{Évaluation Col 2} (utilité 1.25)...
+    \begin{itemize}[label=--]
+        \item Action: \textbf{REJETÉE}. (Conflit sur Ligne 1)
+    \end{itemize}
+    \item \textbf{Évaluation Col 8} (utilité 1.0)...
+    \begin{itemize}[label=--]
+        \item Action: \textbf{REJETÉE}. (Conflit sur Ligne 1)
+    \end{itemize}
+\end{itemize}
+
+\vspace{3mm}
+\noindent \textbf{Solution gloutonne finale:} [6, 7, 4] \\
+\textbf{Valeur ($z_{\text{glouton}}$):} 30
+
+%
+% -----------------------------------------------------------------------------------------------------------------------------------------------------
+%
+
+\vspace{5mm}
+\noindent
+\fbox{
+  \begin{minipage}{0.97 \textwidth}
+    \begin{center}
+      \vspace{1mm}
+        \Large{Heuristique d'amélioration appliquée au SPP}
+      \vspace{1mm}
+    \end{center}
+  \end{minipage}
+}
+\vspace{2mm}
+
+\noindent
+Présenter l'algorithme mis en oeuvre. Illustrer sur un exemple didactique.
+
+
+\subsubsection*{Mon heuristique d'amélioration (descente\_local)}
+
+Mon heuristique d'amélioration est une descente locale, \texttt{descente\_local}, qui fonctionne comme ceci~:
+L'algorithme commence à partir d'une solution initiale (ici, la solution gloutonne).
+
+\begin{enumerate}
+    \item \textbf{Génération de voisinage~:} À chaque itération, la fonction appelle la fonction de voisinage (\texttt{generer\_voisinage\_1\_1}). Celle-ci génère l'ensemble de tous les voisins valides pouvant être atteints en effectuant un échange k-p de type 1-1 (retirer un élément de la solution et en ajouter un qui n'y est pas, tout en respectant les contraintes).
+
+    \item \textbf{Évaluation et sélection~:} On évalue le coût de chaque voisin généré pour trouver le meilleur voisin (celui avec le coût le plus élevé).
+    \begin{itemize}
+        \item \textbf{Si} le coût de ce meilleur voisin est supérieur au coût de la solution courante, on met à jour la solution courante avec ce meilleur voisin et on répète le processus (retour à l'étape 1).
+        \item \textbf{Sinon}, si aucun voisin n'améliore la solution courante, l'algorithme s'arrête et retourne la solution courante comme optimum local.
+    \end{itemize}
+\end{enumerate}
+
+\subsubsection*{Illustration sur \texttt{didactic.dat}}
+
+\noindent \textbf{Itération de Descente n°1}
+\begin{itemize}
+    \item Solution courante: [6, 7, 4] (Coût = 30)
+    \item Génération de 0 voisins (1-1) valides...
+    \item \textbf{Résultat~:} PAS D'AMÉLIORATION. Optimum local atteint.
+\end{itemize}
+
+\paragraph{Analyse de l'illustration}
+Ici, pendant la génération des voisins, aucun voisin valide n'a pu être généré à partir de la solution initiale gloutonne [6, 7, 4]. L'algorithme s'est donc arrêté immédiatement et a retourné la solution initiale comme solution finale. Notre solution était déjà un optimum local pour ce voisinage.
+
+
+%
+% -----------------------------------------------------------------------------------------------------------------------------------------------------
+%
+
+\vspace{5mm}
+\noindent
+\fbox{
+  \begin{minipage}{0.97 \textwidth}
+    \begin{center}
+      \vspace{1mm}
+        \Large{Expérimentation numérique}
+      \vspace{1mm}
+    \end{center}
+  \end{minipage}
+}
+\vspace{2mm}
+
+\noindent
+Présenter l'environnement machine sur lequel les algorithmes vont tourner (référence). 
+Présenter  sous forme synthétique (tableau, graphique...) les résultats obtenus pour les 10 instances sélectionnées.
+
+
+\noindent
+\textbf{Environnement machine :}
+Les algorithmes ont tourné sur la machine suivante :
+\begin{itemize}
+    \item \textbf{Système d'exploitation :} Windows 11
+    \item \textbf{Processeur :} AMD RYZEN 7 5700X 8-Core
+    \item \textbf{Mémoire :} 16Go
+\end{itemize}
+
+\noindent
+\begin{table}[h!] 
+\centering
+\caption{Résultats des heuristiques gloutonne et locale sur 10 instances SPP.}
+\label{tab:resultats_spp}
+\begin{tabular}{lrrrc}
+\toprule
+\textbf{Instance} & \textbf{$z_{\text{glouton}}$} & \textbf{$t_{\text{glouton}}$ (s)} & \textbf{$z_{\text{local}}$} & \textbf{$t_{\text{local}}$ (s)} \\
+\midrule
+\texttt{pb\_100rnd0100.dat} & 342.0 & 0.000 & 343.0 & 0.001 \\
+\texttt{pb\_200rnd0100.dat} & 351.0 & 0.001 & 365.0 & 0.008 \\
+\texttt{pb\_500rnd0300.dat} & 674.0 & 0.004 & 693.0 & 0.046 \\
+\texttt{pb\_500rnd1500.dat} & 1059.0 & 0.009 & 1115.0 & 0.136 \\
+\texttt{pb\_500rnd1700.dat} & 150.0 & 0.004 & 154.0 & 0.003 \\
+\texttt{pb\_200rnd0400.dat} & 55.0 & 0.000 & 55.0 & 0.004 \\
+\texttt{pb\_200rnd0700.dat} & 945.0 & 0.000 & 955.0 & 0.004 \\
+\texttt{pb\_1000rnd0100.dat} & 49.0 & 0.192 & 49.0 & 0.001 \\
+\texttt{pb\_1000rnd0300.dat} & 507.0 & 0.023 & 528.0 & 0.119 \\
+\texttt{didactic.dat} & 30.0 & 0.000 & 30.0 & 0.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+
+%
+% -----------------------------------------------------------------------------------------------------------------------------------------------------
+%
+
+\vspace{5mm}
+\noindent
+\fbox{
+  \begin{minipage}{0.97 \textwidth}
+    \begin{center}
+      \vspace{1mm}
+        \Large{Discussion}
+      \vspace{1mm}
+    \end{center}
+  \end{minipage}
+}
+\vspace{2mm}
+
+\noindent
+Questions type pour mener votre discussion :
+
+\begin{itemize}
+\item au regard des temps de résolution requis par le solveur MIP (GLPK) pour obtenir une solution optimale à  l'instance considérée, l'usage d'une heuristique se justifie-t-il?
+
+\item avec pour référence la solution optimale, quelle est la qualité des solutions obtenues avec l'heuristique de construction et l'heuristique d'amélioration? \\
+Sur le plan des temps de résolution, quel est le rapport  entre le temps consommé par le solveur MIP et vos heuristiques?
+
+\item Le recours aux (méta)heuristiques apparaît-il prometteur ? \\
+Entrevoyez-vous des pistes d'amélioration à apporter à vos heuristiques?
+
+\vfill
+\break
+
+\end{itemize}
+
+
+\end{document}
