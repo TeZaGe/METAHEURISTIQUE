@@ -7,6 +7,7 @@
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
 \begin{document}
 
+
 % =====================================================================================
 % Document : rendu du DM1
 % Auteur : Xavier Gandibleux
@@ -34,6 +35,40 @@
 \noindent
 Présenter la formulation du SPP. %Rechercher et citer 1 situation pratique que modélise le SPP en illustrant.
 
+\noindent
+La formulation mathématique est la suivante :
+
+\vspace{5mm}
+\noindent
+\textbf{Ensembles et Indices :}
+\begin{itemize}
+    \item $I = $ L'ensemble des lignes (contraintes).
+    \item $J = $ L'ensemble des colonnes (variables).
+\end{itemize}
+
+\noindent
+\textbf{Paramètres (Données) :}
+\begin{itemize}
+    \item $c_j$ : Le coût de la colonne $j \in J$.
+    \item $A = (a_{ij})$ : Une matrice binaire où $a_{ij} = 1$ si la ligne $i$ est couverte par la colonne $j$, et 0 sinon.
+\end{itemize}
+
+\noindent
+\textbf{Variables de Décision :}
+\begin{itemize}
+    \item $x_j$ : Une variable binaire qui vaut 1 si la colonne $j$ est sélectionnée dans la solution, et 0 sinon.
+\end{itemize}
+
+\noindent
+L'objectif est de maximiser le coût total des colonnes sélectionnées
+
+\noindent
+Sous condition qu'on respecte la contrainte que chaque ligne est couverte au maximum une fois
+
+
+
+
+
 %
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 %
@@ -52,7 +87,17 @@ Présenter la formulation du SPP. %Rechercher et citer 1 situation pratique que 
 \vspace{2mm}
 
 \noindent
-Présenter la modélisation JuMP (ou GMP) du SPP.
+Notre modélisation JuMP traduit directement la formulation mathématique. La fonction \texttt{setSPP} prend la matrice des coûts \texttt{C} et la matrice des contraintes \texttt{A} en entrée et crée un modèle JuMP.
+
+\vspace{3mm}
+\noindent
+\textbf{Explication des lignes clés de la fonction :}
+\begin{itemize}
+    \item \texttt{@variable(spp, x[1:n], Bin)} : Déclare les $n$ variables de décision $x_j$ et indique qu'elles sont binaires ($x_j \in \{0, 1\}$).
+    \item \texttt{@objective(spp, Max, dot(C, x))} : Définit la fonction objectif. On cherche à \texttt{Max}imiser le produit scalaire entre les coûts \texttt{C} et les variables \texttt{x} (ce qui équivaut à $\max \sum c_j x_j$).
+    \item \texttt{@constraint(spp , ...)} : Crée une contrainte pour chaque ligne $i$ (de 1 à $m$), garantissant que la somme des $a_{ij} x_j$ sur cette ligne ne dépasse pas 1 ($\sum a_{ij} x_j \le 1, \forall i$).
+\end{itemize}
+
 
 %
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -72,11 +117,9 @@ Présenter la modélisation JuMP (ou GMP) du SPP.
 \vspace{2mm}
 
 \noindent
-\begin{table}[h!]
-\centering
-\caption{Voici les 10 instances.}
-\label{tab:instances_list} % Label modifié pour éviter les doublons
-\begin{tabular}{l} % Une seule colonne
+\begin{center}
+\label{tab:instances_list} 
+\begin{tabular}{l} 
 \toprule
 \textbf{Instance} \\
 \midrule
@@ -92,7 +135,7 @@ Présenter la modélisation JuMP (ou GMP) du SPP.
 \texttt{didactic.dat} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{center}
 
 
 
@@ -326,11 +369,18 @@ Questions type pour mener votre discussion :
 \begin{itemize}
 \item au regard des temps de résolution requis par le solveur MIP (GLPK) pour obtenir une solution optimale à  l'instance considérée, l'usage d'une heuristique se justifie-t-il?
 
+Oui, l'usage d'une heuristique est totalement justifié. Nos tests montrent que si le solveur GLPK fonctionne parfaitement pour les petites instances comme \texttt{didactic.dat}, son temps de résolution augmente énormément quand on augmente le nombre de variables et de contraintes. Le temps requis pour trouver la solution devient beaucoup trop long.L'heuristique, en revanche, fournit une solution super rapidement
+
 \item avec pour référence la solution optimale, quelle est la qualité des solutions obtenues avec l'heuristique de construction et l'heuristique d'amélioration? \\
 Sur le plan des temps de résolution, quel est le rapport  entre le temps consommé par le solveur MIP et vos heuristiques?
 
+Sur le plan des temps de résolution, le rapport est en faveur de notre heuristiques. Pour l'instance \texttt{pb\_1000rnd0300.dat}, notre heuristique complète ($t_{\text{glouton}} + t_{\text{local}}$) prend 0.142 secondes. Le solveur lui, prendrait plusieurs minutes. Le rapport est donc très largement en faveur de l'heuristique.
+
+
 \item Le recours aux (méta)heuristiques apparaît-il prometteur ? \\
 Entrevoyez-vous des pistes d'amélioration à apporter à vos heuristiques?
+
+Oui, le recours aux métaheuristiques paraît prometteur. En partant déjà d'une solution gloutonne qui est très rapide à obtenir, on devrait pouvoir améliorer nos résultats grâce à des algorithmes comme GRASP et ses amélioration.
 
 \vfill
 \break

@@ -8,6 +8,7 @@ include("setSPP.jl")
 include("getfname.jl")
 
 function utility(ensemble, C, A)
+    
     col_cost = sum(A[:, ensemble])
     return col_cost > 0 ? C[ensemble] / col_cost : 0.0
 end
