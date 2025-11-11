@@ -1,3 +1,15 @@
+\documentclass[]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amssymb,latexsym,amsmath}
+\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
+\usepackage{graphicx}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{float}     % Pour forcer le placement [H]
+\usepackage{booktabs}  
+\usepackage{multirow} 
+
+\begin{document}
+
 % =====================================================================================
 % Document : rendu du IE2
 % Auteur : Xavier Gandibleux
@@ -12,18 +24,30 @@
 \vspace{5mm}
 \noindent
 \fbox{
-  \begin{minipage}{0.97 \textwidth}
-    \begin{center}
-      \vspace{1mm}
-        \Large{Présentation succincte de GRASP appliqué sur le SPP}
-      \vspace{1mm}
-    \end{center}
-  \end{minipage}
+\begin{minipage}{0.97 \textwidth}
+\begin{center}
+\vspace{1mm}
+\Large{Présentation succincte de GRASP appliqué sur le SPP}
+\vspace{1mm}
+\end{center}
+\end{minipage}
 }
 \vspace{2mm}
 
 \noindent
 Présenter l'algorithme mis en oeuvre. Illustrer sur un exemple didactique (poursuivre avec l'exemple pris en DM1). Présenter vos choix de mise en oeuvre.
+
+Le grasp que j'ai réalisé fonctionne de la manière suivante :
+
+\begin{enumerate}
+    \item \textbf{Construction gloutonne randomisée :} On construit une solution initiale en sélectionnant itérativement des éléments à ajouter à la solution. À chaque étape, on crée une RCL. Un élément qui respecte les contraintes et qui a une valeur d'utilité supérieur au Ulimit calculé comme ceci :
+    $U_{limit} = u_{min} + \alpha \cdot (u_{max} - u_{min})$
+    Ensuite, on séléctionne aléatoirement un élément dans la RCL à ajouter à la solution.
+    
+    \item \textbf{Amélioration locale :} Une fois la solution initiale construite, on applique notre descente locale avec un voisinage 1-1 pour améliorer la solution.
+    
+    \item \textbf{Itérations :} Les étapes de construction et d'amélioration sont répétées un certain nombre de fois (ou jusqu'à une condition d'arrêt), et la meilleure solution trouvée au cours de ces itérations est retenue comme solution finale.
+\end{enumerate}
 
 %
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -32,18 +56,34 @@ Présenter l'algorithme mis en oeuvre. Illustrer sur un exemple didactique (pour
 \vspace{5mm}
 \noindent
 \fbox{
-  \begin{minipage}{0.97 \textwidth}
-    \begin{center}
-      \vspace{1mm}
-        \Large{Présentation succincte de ReactiveGRASP appliqué sur le SPP}
-      \vspace{1mm}
-    \end{center}
-  \end{minipage}
+\begin{minipage}{0.97 \textwidth}
+\begin{center}
+\vspace{1mm}
+\Large{Présentation succincte de ReactiveGRASP appliqué sur le SPP}
+\vspace{1mm}
+\end{center}
+\end{minipage}
 }
 \vspace{2mm}
 
 \noindent
 Présenter l'algorithme mis en oeuvre. Illustrer sur un exemple didactique (poursuivre avec l'exemple pris en DM1). Présenter vos choix de mise en oeuvre.
+
+Mon ReactiveGRASP est une extension de GRASP classique qui ajuste dinamiquement les \alpha au cours de l'exécution.
+
+\begin{enumerate}
+    \item \textbf{Initialisation :} On définit un ensemble de valeurs de $\alpha$ à tester (dans notre cas : $\{0.1, 0.3, 0.5, 0.7, 0.9\}$). Chaque $\alpha$ se voit attribuer une probabilité initiale uniforme ($p_i = 0.2$ pour 5 valeurs).
+    
+    \item \textbf{Sélection adaptative :} À chaque itération, on sélectionne un $\alpha$ selon une distribution de probabilités. Plus un $\alpha$ a produit de bonnes solutions, plus sa probabilité d'être sélectionné augmente.
+    
+    \item \textbf{ l'amélioration locale et la construction GRASP :} Garde le même fonctionnement que GRASP classique.
+
+    \item \textbf{Mise à jour des probabilités :} Tous les $N$ itérations (dans notre cas, $N=20$), on recalcule les probabilités selon la formule :
+    $$q_i = \left(\frac{\bar{z}_i}{z^*}\right)^k$$
+    où $\bar{z}_i$ est la qualité moyenne des solutions obtenues avec $\alpha_i$, $z^*$ est la meilleure solution globale trouvée, et $k$ est un paramètre d'intensification (ici $k=5$).
+    
+    Les probabilités sont ensuite normalisées : $p_i = \frac{q_i}{\sum_j q_j}$.
+\end{enumerate}
 
 %
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -52,18 +92,46 @@ Présenter l'algorithme mis en oeuvre. Illustrer sur un exemple didactique (pour
 \vspace{5mm}
 \noindent
 \fbox{
-  \begin{minipage}{0.97 \textwidth}
-    \begin{center}
-      \vspace{1mm}
-        \Large{Expérimentation numérique de GRASP}
-      \vspace{1mm}
-    \end{center}
-  \end{minipage}
+\begin{minipage}{0.97 \textwidth}
+\begin{center}
+\vspace{1mm}
+\Large{Expérimentation numérique de GRASP}
+\vspace{1mm}
+\end{center}
+\end{minipage}
 }
 \vspace{2mm}
 
 \noindent
 Présenter le protocole d'expérimentation (environnement matériel; budget de calcul; condition(s) d'arrêt; réglage des paramètres).
+\section{Protocole d'expérimentation}
+
+\subsection{Environnement matériel}
+Les algorithmes ont tourné sur la machine suivante :
+\begin{itemize}
+    \item \textbf{Système d'exploitation :} Windows 11
+    \item \textbf{Processeur :} AMD RYZEN 7 5700X 8-Core
+    \item \textbf{Mémoire :} 16Go
+\end{itemize}
+
+\subsection{Budget de calcul et conditions d'arrêt}
+L'expérimentation s'est déroulée en deux phases :
+
+\paragraph{Premier temps}
+Un test a été réalisé avec une condition d'arrêt basée sur le nombre d'itérations.
+\begin{itemize}
+    \item \textbf{Condition d'arrêt :} 200 itérations.
+    \item \textbf{Répétitions :} 3 fois par instance avec un alpha différents a chaque fois.
+    \item \textbf{Instances :} 10 instances différentes.
+\end{itemize}
+
+\paragraph{Second temps}
+Un test a été réalisé avec une condition d'arrêt basée sur le temps d'exécution.
+\begin{itemize}
+    \item \textbf{Condition d'arrêt :} 60 secondes.
+    \item \textbf{Répétitions :} 3 fois par instance avec un alpha différents a chaque fois.
+    \item \textbf{Instances :} 10 instances différentes.
+\end{itemize}
 
 \noindent
 Rapporter graphiquement vos résultats selon $\hat{z}_{min}$, $\hat{z}_{max}$, $\hat{z}_{moy}$ mesurés à intervalles réguliers (exemple de pas de 10 secondes).
@@ -71,8 +139,135 @@ Rapporter graphiquement vos résultats selon $\hat{z}_{min}$, $\hat{z}_{max}$, $
 \noindent
 Rapporter l'étude de l'influence du paramètre $\alpha$.
 
+Dans notre expérimentation, nous avons testé trois valeurs de $\alpha$ : 0.1, 0.5 et 0.9. Voici les observations principales :
+
+
 \noindent
 Présenter sous forme de tableau les résultats finaux obtenus pour les 10 instances sélectionnées.
+\begin{table}[H]
+\centering
+\caption{Résultats finaux pour les 10 instances (200 itérations)}
+\label{tab:resume_grasp}
+\small
+\begin{tabular}{l c r r}
+\toprule
+\textbf{Instance} & \textbf{$\alpha$} & \textbf{Val. best} & \textbf{CPU (s)} \\
+\midrule
+\multirow{3}{*}{\texttt{pb\_100rnd0100.dat}} 
+    & 0.1 & 368 & 0.66 \\
+    & 0.5 & 370 & 0.40 \\
+    & 0.9 & 352 & 0.40 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0100.dat}} 
+    & 0.1 & 403 & 3.45 \\
+    & 0.5 & 408 & 2.38 \\
+    & 0.9 & 386 & 2.20 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd0300.dat}} 
+    & 0.1 & 718 & 53.13 \\
+    & 0.5 & 715 & 22.86 \\
+    & 0.9 & 736 & 15.19 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd1500.dat}} 
+    & 0.1 & 1093 & 78.01 \\
+    & 0.5 & 1135 & 41.52 \\
+    & 0.9 & 1122 & 30.15 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd1700.dat}} 
+    & 0.1 & 166 & 1.92 \\
+    & 0.5 & 170 & 1.47 \\
+    & 0.9 & 165 & 1.14 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0400.dat}} 
+    & 0.1 & 59 & 1.81 \\
+    & 0.5 & 59 & 1.98 \\
+    & 0.9 & 57 & 2.04 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0700.dat}} 
+    & 0.1 & 992 & 7.13 \\
+    & 0.5 & 992 & 2.17 \\
+    & 0.9 & 981 & 1.71 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_1000rnd0100.dat}} 
+    & 0.1 & 57 & 3.01 \\
+    & 0.5 & 67 & 3.14 \\
+    & 0.9 & 57 & 2.59 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_1000rnd0300.dat}} 
+    & 0.1 & 554 & 128.72 \\
+    & 0.5 & 590 & 64.70 \\
+    & 0.9 & 594 & 45.91 \\
+\addlinespace
+\multirow{3}{*}{\texttt{dat/didactic.dat}} 
+    & 0.1 & 30 & 0.00 \\
+    & 0.5 & 30 & 0.00 \\
+    & 0.9 & 30 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Résultats finaux pour les 10 instances (60 secondes)}
+\label{tab:resume_grasp_time}
+\small
+\begin{tabular}{l c r r r}
+\toprule
+\textbf{Instance} & \textbf{$\alpha$} & \textbf{Val. best} & \textbf{CPU (s)} & \textbf{Itérations} \\
+\midrule
+\multirow{3}{*}{\texttt{pb\_100rnd0100.dat}} 
+    & 0.1 & 370 & 60.0 & 18640 \\
+    & 0.5 & 372 & 60.0 & 32237 \\
+    & 0.9 & 352 & 60.0 & 28761 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0100.dat}} 
+    & 0.1 & 414 & 60.01 & 3724 \\
+    & 0.5 & 415 & 60.01 & 7362 \\
+    & 0.9 & 386 & 60.0 & 7483 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd0300.dat}} 
+    & 0.1 & 697 & 60.06 & 224 \\
+    & 0.5 & 724 & 60.08 & 481 \\
+    & 0.9 & 739 & 60.02 & 786 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd1500.dat}} 
+    & 0.1 & 1080 & 60.0 & 163 \\
+    & 0.5 & 1145 & 60.11 & 285 \\
+    & 0.9 & 1134 & 60.06 & 414 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd1700.dat}} 
+    & 0.1 & 180 & 60.0 & 8089 \\
+    & 0.5 & 192 & 60.0 & 11527 \\
+    & 0.9 & 165 & 60.0 & 11727 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0400.dat}} 
+    & 0.1 & 61 & 60.0 & 8472 \\
+    & 0.5 & 60 & 60.0 & 6516 \\
+    & 0.9 & 57 & 60.0 & 6754 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0700.dat}} 
+    & 0.1 & 991 & 60.03 & 2168 \\
+    & 0.5 & 1003 & 60.0 & 6888 \\
+    & 0.9 & 992 & 60.0 & 8420 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_1000rnd0100.dat}} 
+    & 0.1 & 67 & 60.0 & 5409 \\
+    & 0.5 & 67 & 60.01 & 5217 \\
+    & 0.9 & 57 & 60.01 & 5563 \\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_1000rnd0300.dat}} 
+    & 0.1 & 546 & 60.04 & 102 \\
+    & 0.5 & 573 & 60.37 & 228 \\
+    & 0.9 & 587 & 60.13 & 363 \\
+\addlinespace
+\multirow{3}{*}{\texttt{dat/didactic.dat}} 
+    & 0.1 & 30 & 60.0 & 18693182 \\
+    & 0.5 & 30 & 60.0 & 29640773 \\
+    & 0.9 & 30 & 60.0 & 29826432 \\
+
+
+
+
 
 %
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -81,18 +276,46 @@ Présenter sous forme de tableau les résultats finaux obtenus pour les 10 insta
 \vspace{5mm}
 \noindent
 \fbox{
-  \begin{minipage}{0.97 \textwidth}
-    \begin{center}
-      \vspace{1mm}
-        \Large{Expérimentation numérique de ReactiveGRASP}
-      \vspace{1mm}
-    \end{center}
-  \end{minipage}
+\begin{minipage}{0.97 \textwidth}
+\begin{center}
+\vspace{1mm}
+\Large{Expérimentation numérique de ReactiveGRASP}
+\vspace{1mm}
+\end{center}
+\end{minipage}
 }
 \vspace{2mm}
 
 \noindent
 Présenter le protocole d'expérimentation (env. matériel; budget de calcul; condition(s) d'arrêt).
+\section{Protocole d'expérimentation}
+
+\subsection{Environnement matériel}
+Les algorithmes ont tourné sur la machine suivante :
+\begin{itemize}
+    \item \textbf{Système d'exploitation :} Windows 11
+    \item \textbf{Processeur :} AMD RYZEN 7 5700X 8-Core
+    \item \textbf{Mémoire :} 16Go
+\end{itemize}
+
+\subsection{Budget de calcul et conditions d'arrêt}
+L'expérimentation s'est déroulée en deux phases :
+
+\paragraph{Premier temps}
+Un test a été réalisé avec une condition d'arrêt basée sur le nombre d'itérations.
+\begin{itemize}
+    \item \textbf{Condition d'arrêt :} 200 itérations.
+    \item \textbf{Répétitions :} 3 fois par instance.
+    \item \textbf{Instances :} 10 instances différentes.
+\end{itemize}
+
+\paragraph{Second temps}
+Un test a été réalisé avec une condition d'arrêt basée sur le temps d'exécution.
+\begin{itemize}
+    \item \textbf{Condition d'arrêt :} 60 secondes.
+    \item \textbf{Répétitions :} 3 fois par instance.
+    \item \textbf{Instances :} 10 instances différentes.
+\end{itemize}
 
 \noindent
 Rapporter graphiquement vos résultats selon $\hat{z}_{min}$, $\hat{z}_{max}$, $\hat{z}_{moy}$ mesurés à intervalles réguliers (exemple de pas de 10 secondes).
@@ -100,8 +323,142 @@ Rapporter graphiquement vos résultats selon $\hat{z}_{min}$, $\hat{z}_{max}$, $
 \noindent
 Rapporter l'apprentissage du paramètre $\alpha$ réalisé par ReactiveGRASP, les valeurs saillantes établies.
 
+Les valeurs de $\alpha$ ont été ajustées dynamiquement par ReactiveGRASP en fonction des performances observées. Voici un résumé des tendances observées :
+\begin{itemize}
+  \item les valeurs de \alpha entre 0.1 et 0.3 ne donnent dans mon expérimentation jamais la meilleur solution.
+  \item les valeurs de \alpha entre 0.5 et 0.7 peuvent être efficaces dans certains cas, dans nos données elles le sont surtout sur des instances de petite taille.
+  \item les \alpha de 0.9 sont dans notre expérimentation les plus performantes sur la majorité des instances et sont sans concurence sur les grandes instances.
+
 \noindent
 Présenter sous forme de tableau les résultats finaux obtenus pour les 10 instances sélectionnées.
+
+\vspace{3mm}
+\begin{table}[H] % Utilisation de [H] pour forcer le placement
+\centering
+\caption{Résultats finaux pour les 10 instances (200 itérations)}
+\label{tab:resultats_200iter}
+\small
+\begin{tabular}{l r r r r r} 
+\toprule
+\textbf{Instance} & \textbf{Run} & \textbf{Val. Best} & \textbf{CPU (s)} & \textbf{$\alpha$-Best} & \textbf{Val. Best Known} \\
+\midrule
+\multirow{3}{*}{\texttt{pb\_100rnd0100.dat}} 
+    & 1 & 368 & 0.58 & 0.7 & 372*\\
+    & 2 & 366 & 0.44 & 0.9 & 372*\\
+    & 3 & 368 & 0.40 & 0.7 & 372*\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0100.dat}} 
+    & 1 & 399 & 1.84 & 0.7 & 416*\\
+    & 2 & 403 & 1.98 & 0.5 & 416*\\
+    & 3 & 406 & 2.04 & 0.5 & 416*\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd0300.dat}} 
+    & 1 & 739 & 22.41 & 0.9 & 776 \\
+    & 2 & 736 & 23.58 & 0.9 & 776\\
+    & 3 & 736 & 21.47 & 0.9 & 776\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd1500.dat}} 
+    & 1 & 1129 & 35.66 & 0.9 & 1196\\
+    & 2 & 1136 & 32.75 & 0.9 & 1196\\
+    & 3 & 1130 & 34.60 & 0.9 & 1196\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd1700.dat}} 
+    & 1 & 167 & 1.23 & 0.9 & 192\\
+    & 2 & 172 & 1.01 & 0.9 & 192\\
+    & 3 & 173 & 1.03 & 0.9 & 192\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0400.dat}} 
+    & 1 & 59 & 1.43 & 0.7 & 64*\\
+    & 2 & 58 & 1.46 & 0.7 & 64*\\
+    & 3 & 60 & 1.44 & 0.7 & 64*\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0700.dat}} 
+    & 1 & 994 & 2.36 & 0.5 & 1004*\\
+    & 2 & 988 & 2.27 & 0.5 & 1004*\\
+    & 3 & 992 & 2.44 & 0.5 & 1004*\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_1000rnd0100.dat}} 
+    & 1 & 56 & 1.94 & 0.9 & 67*\\
+    & 2 & 59 & 1.93 & 0.9 & 67*\\
+    & 3 & 57 & 1.97 & 0.9 & 67*\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_1000rnd0300.dat}} 
+    & 1 & 584 & 39.12 & 0.9 & 661\\
+    & 2 & 583 & 52.87 & 0.9 & 661\\
+    & 3 & 603 & 52.80 & 0.9 & 661\\
+\addlinespace
+\multirow{3}{*}{\texttt{didactic.dat}} 
+    & 1 & 30 & 0.00 & 0.5 & 30\\
+    & 2 & 30 & 0.00 & 0.5 & 30\\
+    & 3 & 30 & 0.00 & 0.5 & 30\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{5mm}
+
+\begin{table}[H] 
+\centering
+\caption{Résultats de l'expérimentation avec une condition d'arrêt de 60 secondes.}
+\label{tab:temps_60s}
+\small 
+\begin{tabular}{l r r r r r r} 
+\toprule
+
+\textbf{Instance} & \textbf{Run} & \textbf{Val. Best} & \textbf{CPU (s)} & \textbf{Itér.} & \textbf{$\alpha$-Best} & \textbf{Val. Best Known} \\
+\midrule
+\multirow{3}{*}{\texttt{pb\_100rnd0100.dat}} 
+    & 1 & 372 & 60.00 & 27385 & 0.7 & 372*\\
+    & 2 & 372 & 60.00 & 25738 & 0.7 & 372*\\
+    & 3 & 372 & 60.00 & 25736 & 0.7 & 372*\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0100.dat}} 
+    & 1 & 414 & 60.00 & 5368 & 0.5 & 416*\\
+    & 2 & 415 & 60.01 & 5720 & 0.5 & 416*\\
+    & 3 & 414 & 60.02 & 5425 & 0.5 & 416*\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd0300.dat}} 
+    & 1 & 739 & 60.15 & 499 & 0.9 & 776\\
+    & 2 & 739 & 60.15 & 456 & 0.9 & 776\\
+    & 3 & 738 & 60.03 & 483 & 0.9 & 776\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd1500.dat}} 
+    & 1 & 1138 & 60.18 & 305 & 0.9 & 1196\\
+    & 2 & 1139 & 60.26 & 308 & 0.9 & 1196\\
+    & 3 & 1136 & 60.18 & 293 & 0.9 & 1196\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_500rnd1700.dat}} 
+    & 1 & 188 & 60.00 & 9333 & 0.9 & 192\\
+    & 2 & 189 & 60.00 & 10278 & 0.9 & 192\\
+    & 3 & 186 & 60.00 & 9451 & 0.9 & 192\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0400.dat}} 
+    & 1 & 61 & 60.00 & 5973 & 0.7 & 64*\\
+    & 2 & 61 & 60.01 & 6998 & 0.7 & 64*\\
+    & 3 & 60 & 60.01 & 6284 & 0.9 & 64*\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_200rnd0700.dat}} 
+    & 1 & 1001 & 60.02 & 4634 & 0.5 & 1004*\\
+    & 2 & 997 & 60.03 & 5102 & 0.5 & 1004*\\
+    & 3 & 1001 & 60.02 & 4541 & 0.5 & 1004*\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_1000rnd0100.dat}} 
+    & 1 & 67 & 60.00 & 5429 & 0.9 & 67*\\
+    & 2 & 67 & 60.00 & 5397 & 0.9 & 67*\\
+    & 3 & 67 & 60.01 & 5359 & 0.9 & 67*\\
+\addlinespace
+\multirow{3}{*}{\texttt{pb\_1000rnd0300.dat}} 
+    & 1 & 590 & 60.02 & 224 & 0.9 & 661\\
+    & 2 & 594 & 60.14 & 244 & 0.9 & 661\\
+    & 3 & 592 & 60.07 & 233 & 0.9 & 661\\
+\addlinespace
+\multirow{3}{*}{\texttt{didactic.dat}} 
+    & 1 & 30 & 60.00 & 31001331 & 0.5 & 30\\
+    & 2 & 30 & 60.00 & 31299926 & 0.5 & 30\\
+    & 3 & 30 & 60.00 & 30727593 & 0.5 & 30\\
+\bottomrule
+\end{tabular}
+\end{table}
 
 %
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -110,13 +467,13 @@ Présenter sous forme de tableau les résultats finaux obtenus pour les 10 insta
 \vspace{5mm}
 \noindent
 \fbox{
-  \begin{minipage}{0.97 \textwidth}
-    \begin{center}
-      \vspace{1mm}
-        \Large{Eléments de contribution au bonus}
-      \vspace{1mm}
-    \end{center}
-  \end{minipage}
+\begin{minipage}{0.97 \textwidth}
+\begin{center}
+\vspace{1mm}
+\Large{Eléments de contribution au bonus}
+\vspace{1mm}
+\end{center}
+\end{minipage}
 }
 \vspace{2mm}
 
@@ -130,20 +487,28 @@ Présenter vos contributions aux aspects proposés en bonus.
 \vspace{5mm}
 \noindent
 \fbox{
-  \begin{minipage}{0.97 \textwidth}
-    \begin{center}
-      \vspace{1mm}
-        \Large{Discussion}
-      \vspace{1mm}
-    \end{center}
-  \end{minipage}
+\begin{minipage}{0.97 \textwidth}
+\begin{center}
+\vspace{1mm}
+\Large{Discussion}
+\vspace{1mm}
+\end{center}
+\end{minipage}
 }
 \vspace{2mm}
 
 \noindent
 Tirer des conclusions en comparant les résultats collectés avec vos deux variantes de métaheuristiques.
+
+En comparant les résultats de GRASP et ReactiveGRASP j'ai pus constater que ReactiveGRASP offre de meilleurs globalement de meilleurs résultats. J'ai aussi remarquer sur le paramétrage que les résultats obtenu avec une limite de temps sont meilleurs que ceux obtenus par un nombre d'itération fixe ce qui n'est pas réel suprenement 
+car il réalise souvent plus d'itération que celle fixé dans ma première expérimentation surtout quand les instances sont petites. Pour finir j'ai pus constater que les valeurs de \alpha les plus élevées sont celles qui donnent les meilleurs résultats dans la majorité des cas.
 \noindent
-Quelles sont les recommandations que vous émettez à l'issue de l'étude et avec quelle variante continuez vous l'aventure des métaheuristiques?
+Je recommande l'utilisation de ReactiveGRASP. Son implémentation est facile a mettre en place a partir du GRASP classique et produit des résultats meilleurs ou au moins équivalents dans tous les cas.
+L'auto-ajustement du paramètre alpha est particulièrement intéressant, car il offre un diagnostic sur l'efficacité de notre heuristique de construction. 
+En effet, le fait que les meilleurs résultats soient obtenus avec un alpha petit ou grand indique si notre fonction gloutonne est performante ou si elle est souvent piégée dans des optima locaux, ce qui a été notre cas.
 
 \vfill
 \break
+
+
+\end{document}

@@ -223,6 +223,42 @@ function select_alpha_index(probabilities::Vector{Float64})
     return length(probabilities) 
 end
 
+function grasp(A::Matrix{Int}, 
+               C::Vector{Int}, 
+               total_iterations::Int,
+               alpha::Float64,
+               all_utilities::Vector{Tuple{Int, Float64}})
+    
+    println("--- Démarrage GRASP classique (α = $alpha, total_iterations = $total_iterations) ---")
+    
+    global_best_sol = Int[]
+    global_best_val = -Inf
+    
+    for iter in 1:total_iterations
+        s = greedy_randomized_construction(C, A, all_utilities, alpha, 10)
+    
+        s_local = descente_locale(s, C, A)
+        
+        val_local = evaluer_solution(s_local, C)
+        
+        if val_local > global_best_val
+            global_best_val = val_local
+            global_best_sol = s_local
+            println("It $iter/$total_iterations: Nouv. meilleur global = $global_best_val")
+        else
+            if iter % 10 == 0
+                println("It $iter/$total_iterations: Valeur = $val_local (Meilleur = $global_best_val)")
+            end
+        end
+    end
+    
+    println("\n--- Fin GRASP classique ---")
+    println("Alpha utilisé : $alpha")
+    println("Meilleure valeur : $global_best_val")
+    
+    return global_best_sol, global_best_val
+end
+
 function reactive_grasp(A::Matrix{Int}, 
                         C::Vector{Int}, 
                         total_iterations::Int, 
@@ -231,7 +267,7 @@ function reactive_grasp(A::Matrix{Int},
                         
     println("--- Démarrage Reactive GRASP (total_iterations = $total_iterations) ---")
 
-    alphas = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.4, 0.5, 0.7, 0.9]
+    alphas = [0.1, 0.3, 0.5, 0.7, 0.9]
     num_alphas = length(alphas)
     
     probabilities = ones(num_alphas) ./ num_alphas 
@@ -297,14 +333,18 @@ function reactive_grasp(A::Matrix{Int},
         println("  α = $(alphas[i]): P = $(round(probabilities[i], digits=3))")
     end
     
-    return global_best_sol, global_best_val
+    # Trouver l'alpha avec la meilleure probabilité finale
+    best_alpha_idx = argmax(probabilities)
+    best_alpha = alphas[best_alpha_idx]
+    
+    return global_best_sol, global_best_val, best_alpha
 end
 
 function resoudreSPP(fname)
     C, A = loadSPP(fname)
     n = length(C)
     
-    println("Pré-calcul des Utilités (une seule fois)...")
+    println("Pré-calcul des Utilités (une seule fois)")
     all_utilities = sort(
         [(i, utility(i, C, A)) for i in 1:n],
         by = x -> x[2], 
@@ -320,7 +360,7 @@ function resoudreSPP(fname)
     TOTAL_ITERATIONS = 200  
     UPDATE_BLOCK = 20       
 
-    (solution_finale, valeur_heur) = reactive_grasp(
+    (solution_finale, valeur_heur, best_alpha) = reactive_grasp(
         A, C,
         TOTAL_ITERATIONS,
         UPDATE_BLOCK,
@@ -382,13 +422,268 @@ function experimentationSPP()
         end
     end
 end
-# --- APPEL FINAL ---
+
 # experimentationSPP()
 
+# fname = "dat/didactic.dat"
+# solution_heuristique = resoudreSPP(fname)
 
-# println("\nLoading...")
-fname = "dat/didactic.dat"
-solution_heuristique = resoudreSPP(fname)
+
+function etude_parametres_reactivegrasp(; mode="iterations", total_iterations=200, limit_time=60.0)
+    """
+    - mode="iterations" : chaque run utilise un nombre fixe d'itérations (total_iterations)
+    - mode="time" : chaque run s'arrête après limit_time secondes
+    """
+    instances = [
+        "dat/pb_100rnd0100.dat",
+        "dat/pb_200rnd0100.dat",
+        "dat/pb_500rnd0300.dat",
+        "dat/pb_500rnd1500.dat",
+        "dat/pb_500rnd1700.dat",
+        "dat/pb_200rnd0400.dat",
+        "dat/pb_200rnd0700.dat",
+        "dat/pb_1000rnd0100.dat",
+        "dat/pb_1000rnd0300.dat",
+        "dat/didactic.dat"
+
+    ]
+    runs = 3
+    update_block = 20
+    results = []
+
+    for fname in instances
+        println("\nInstance : $fname ")
+        C, A = loadSPP(fname)
+        n = length(C)
+        all_utilities = sort(
+            [(i, utility(i, C, A)) for i in 1:n],
+            by = x -> x[2],
+            rev = true
+        )
+        
+        if mode == "iterations"
+            # Mode : nombre fixe d'itérations par run
+            println("Mode itérations : $total_iterations itérations par run")
+            for run in 1:runs
+                t_start = time()
+                sol, val, best_alpha = reactive_grasp(A, C, total_iterations, update_block, all_utilities)
+                t_end = time()
+                cpu_time = t_end - t_start
+                
+                push!(results, (
+                    instance=fname,
+                    run=run,
+                    best_value=val,
+                    cpu_time=cpu_time,
+                    alpha_best=best_alpha
+                ))
+                println("  run = $run | meilleure valeur = $(val) | temps = $(round(cpu_time, digits=2))s | α avec meilleure prob = $best_alpha")
+            end
+        elseif mode == "time"
+            # Mode : limite de temps par run
+            println("Mode temps limité : $(limit_time)s maximum par run")
+            for run in 1:runs
+                t_start = time()
+                
+                alphas = [0.1, 0.3, 0.5, 0.7, 0.9]
+                num_alphas = length(alphas)
+                probabilities = ones(num_alphas) ./ num_alphas
+                alpha_scores_sum = zeros(num_alphas)
+                alpha_counts = zeros(Int, num_alphas)
+                global_best_sol = Int[]
+                global_best_val = -Inf
+                
+                iter = 0
+                while (time() - t_start) < limit_time
+                    iter += 1
+                    idx = select_alpha_index(probabilities)
+                    alpha_selected = alphas[idx]
+                    
+                    s = greedy_randomized_construction(C, A, all_utilities, alpha_selected, 10)
+                    s_local = descente_locale(s, C, A)
+                    val_local = evaluer_solution(s_local, C)
+                    
+                    if val_local > global_best_val
+                        global_best_val = val_local
+                        global_best_sol = s_local
+                    end
+                    
+                    alpha_scores_sum[idx] += val_local
+                    alpha_counts[idx] += 1
+                    
+                    if iter % update_block == 0
+                        avg_scores = zeros(num_alphas)
+                        for i in 1:num_alphas
+                            if alpha_counts[i] > 0
+                                avg_scores[i] = alpha_scores_sum[i] / alpha_counts[i]
+                            end
+                        end
+                        k = 5
+                        qualities = zeros(num_alphas)
+                        if global_best_val > 0
+                            for i in 1:num_alphas
+                                if avg_scores[i] > 0
+                                    qualities[i] = (avg_scores[i] / global_best_val)^k
+                                end
+                            end
+                        end
+                        total_quality = sum(qualities)
+                        if total_quality > 0
+                            probabilities = qualities ./ total_quality
+                        else
+                            probabilities = ones(num_alphas) ./ num_alphas
+                        end
+                    end
+                end
+                
+                t_end = time()
+                cpu_time = t_end - t_start
+                sol = global_best_sol
+                val = global_best_val
+                
+                # Trouver l'alpha avec la meilleure probabilité
+                best_alpha_idx = argmax(probabilities)
+                best_alpha = alphas[best_alpha_idx]
+                
+                push!(results, (
+                    instance=fname,
+                    run=run,
+                    best_value=val,
+                    cpu_time=cpu_time,
+                    iterations=iter,
+                    alpha_best=best_alpha
+                ))
+                println("  run = $run | meilleure valeur = $(val) | temps = $(round(cpu_time, digits=2))s | itérations = $iter | α avec meilleure prob = $best_alpha")
+            end
+        else
+            error("Mode inconnu : $mode. Utilisez 'iterations' ou 'time'")
+        end
+    end
+
+    println("\nRésumé des résultats :")
+    if mode == "time"
+        println("instance\trun\tbest_value\tcpu_time\titerations\talpha_best")
+        for r in results
+            println("$(r.instance)\t$(r.run)\t$(r.best_value)\t$(round(r.cpu_time, digits=2))\t$(r.iterations)\t$(r.alpha_best)")
+        end
+    else
+        println("instance\trun\tbest_value\tcpu_time\talpha_best")
+        for r in results
+            println("$(r.instance)\t$(r.run)\t$(r.best_value)\t$(round(r.cpu_time, digits=2))\t$(r.alpha_best)")
+        end
+    end
+    return results
+end
+
+
+function etude_parametres_grasp(; mode="iterations", total_iterations=200, limit_time=60.0)
+    """
+    Étude de l'influence du paramètre alpha pour GRASP classique.
+    - mode="iterations" : chaque run utilise un nombre fixe d'itérations.
+    - mode="time" : chaque run s'arrête après un temps limite.
+    """
+    instances = [
+        "dat/pb_100rnd0100.dat",
+        "dat/pb_200rnd0100.dat",
+        "dat/pb_500rnd0300.dat",
+        "dat/pb_500rnd1500.dat",
+        "dat/pb_500rnd1700.dat",
+        "dat/pb_200rnd0400.dat",
+        "dat/pb_200rnd0700.dat",
+        "dat/pb_1000rnd0100.dat",
+        "dat/pb_1000rnd0300.dat",
+        "dat/didactic.dat"
+    ]
+    
+    alphas_to_test = [0.1, 0.5, 0.9]
+    results = []
+
+    for fname in instances
+        println("Instance : $fname ")   
+        C, A = loadSPP(fname)
+        n = length(C)
+        all_utilities = sort(
+            [(i, utility(i, C, A)) for i in 1:n],
+            by = x -> x[2],
+            rev = true
+        )
+        
+        for alpha in alphas_to_test
+            println("\n--- Test pour alpha = $alpha ---")
+            
+            if mode == "iterations"
+                println("Mode itérations : $total_iterations itérations")
+                t_start = time()
+                sol, val = grasp(A, C, total_iterations, alpha, all_utilities)
+                t_end = time()
+                cpu_time = t_end - t_start
+                
+                push!(results, (
+                    instance=fname,
+                    alpha=alpha,
+                    best_value=val,
+                    cpu_time=cpu_time
+                ))
+                println("  meilleure valeur = $(val) | temps = $(round(cpu_time, digits=2))s")
+
+            elseif mode == "time"
+                println("Mode temps limité : $(limit_time)s maximum")
+                t_start = time()
+                
+                global_best_sol = Int[]
+                global_best_val = -Inf
+                iter = 0
+                
+                while (time() - t_start) < limit_time
+                    iter += 1
+                    s = greedy_randomized_construction(C, A, all_utilities, alpha, 10)
+                    s_local = descente_locale(s, C, A)
+                    val_local = evaluer_solution(s_local, C)
+                    
+                    if val_local > global_best_val
+                        global_best_val = val_local
+                        global_best_sol = s_local
+                    end
+                end
+                
+                t_end = time()
+                cpu_time = t_end - t_start
+                
+                push!(results, (
+                    instance=fname,
+                    alpha=alpha,
+                    best_value=global_best_val,
+                    cpu_time=cpu_time,
+                    iterations=iter
+                ))
+                println("  meilleure valeur = $(global_best_val) | temps = $(round(cpu_time, digits=2))s | itérations = $iter")
+            else
+                error("Mode inconnu : $mode. Utilisez 'iterations' ou 'time'")
+            end
+        end
+    end
+
+    println("\nRésumé des résultats pour GRASP :")
+    if mode == "time"
+        println("instance\talpha\tbest_value\tcpu_time\titerations")
+        for r in results
+            println("$(r.instance)\t$(r.alpha)\t$(r.best_value)\t$(round(r.cpu_time, digits=2))\t$(r.iterations)")
+        end
+    else
+        println("instance\talpha\tbest_value\tcpu_time")
+        for r in results
+            println("$(r.instance)\t$(r.alpha)\t$(r.best_value)\t$(round(r.cpu_time, digits=2))")
+        end
+    end
+    return results
+end
+
+# etude_parametres_reactivegrasp(mode="iterations", total_iterations=200)
+# etude_parametres_reactivegrasp(mode="time", limit_time=60.0)
+
+# Pour lancer l'étude pour GRASP :
+# etude_parametres_grasp(mode="iterations", total_iterations=200)
+etude_parametres_grasp(mode="time", limit_time=60.0)
 
 
 
