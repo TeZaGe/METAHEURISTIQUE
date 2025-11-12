@@ -4,9 +4,9 @@
 \usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}
 \usepackage{graphicx}
 \usepackage[colorlinks=true, allcolors=blue]{hyperref}
-\usepackage{float}     % Pour forcer le placement [H]
-\usepackage{booktabs}  
-\usepackage{multirow} 
+\usepackage{float}      % Pour forcer le placement [H]
+\usepackage{booktabs}   
+\usepackage{multirow}   
 
 \begin{document}
 
@@ -69,14 +69,14 @@ Le grasp que j'ai réalisé fonctionne de la manière suivante :
 \noindent
 Présenter l'algorithme mis en oeuvre. Illustrer sur un exemple didactique (poursuivre avec l'exemple pris en DM1). Présenter vos choix de mise en oeuvre.
 
-Mon ReactiveGRASP est une extension de GRASP classique qui ajuste dinamiquement les \alpha au cours de l'exécution.
+Mon ReactiveGRASP est une extension de GRASP classique qui ajuste dinamiquement les $\alpha$ au cours de l'exécution.
 
 \begin{enumerate}
     \item \textbf{Initialisation :} On définit un ensemble de valeurs de $\alpha$ à tester (dans notre cas : $\{0.1, 0.3, 0.5, 0.7, 0.9\}$). Chaque $\alpha$ se voit attribuer une probabilité initiale uniforme ($p_i = 0.2$ pour 5 valeurs).
     
     \item \textbf{Sélection adaptative :} À chaque itération, on sélectionne un $\alpha$ selon une distribution de probabilités. Plus un $\alpha$ a produit de bonnes solutions, plus sa probabilité d'être sélectionné augmente.
     
-    \item \textbf{ l'amélioration locale et la construction GRASP :} Garde le même fonctionnement que GRASP classique.
+    \item \textbf{L'amélioration locale et la construction GRASP :} Garde le même fonctionnement que GRASP classique.
 
     \item \textbf{Mise à jour des probabilités :} Tous les $N$ itérations (dans notre cas, $N=20$), on recalcule les probabilités selon la formule :
     $$q_i = \left(\frac{\bar{z}_i}{z^*}\right)^k$$
@@ -121,7 +121,7 @@ L'expérimentation s'est déroulée en deux phases :
 Un test a été réalisé avec une condition d'arrêt basée sur le nombre d'itérations.
 \begin{itemize}
     \item \textbf{Condition d'arrêt :} 200 itérations.
-    \item \textbf{Répétitions :} 3 fois par instance avec un alpha différents a chaque fois.
+    \item \textbf{Répétitions :} 3 fois par instance avec un alpha différent à chaque fois.
     \item \textbf{Instances :} 10 instances différentes.
 \end{itemize}
 
@@ -129,7 +129,7 @@ Un test a été réalisé avec une condition d'arrêt basée sur le nombre d'it�
 Un test a été réalisé avec une condition d'arrêt basée sur le temps d'exécution.
 \begin{itemize}
     \item \textbf{Condition d'arrêt :} 60 secondes.
-    \item \textbf{Répétitions :} 3 fois par instance avec un alpha différents a chaque fois.
+    \item \textbf{Répétitions :} 3 fois par instance avec un alpha différent à chaque fois.
     \item \textbf{Instances :} 10 instances différentes.
 \end{itemize}
 
@@ -264,9 +264,9 @@ Présenter sous forme de tableau les résultats finaux obtenus pour les 10 insta
     & 0.1 & 30 & 60.0 & 18693182 \\
     & 0.5 & 30 & 60.0 & 29640773 \\
     & 0.9 & 30 & 60.0 & 29826432 \\
-
-
-
+\bottomrule
+\end{tabular}
+\end{table}
 
 
 %
@@ -325,9 +325,10 @@ Rapporter l'apprentissage du paramètre $\alpha$ réalisé par ReactiveGRASP, le
 
 Les valeurs de $\alpha$ ont été ajustées dynamiquement par ReactiveGRASP en fonction des performances observées. Voici un résumé des tendances observées :
 \begin{itemize}
-  \item les valeurs de \alpha entre 0.1 et 0.3 ne donnent dans mon expérimentation jamais la meilleur solution.
-  \item les valeurs de \alpha entre 0.5 et 0.7 peuvent être efficaces dans certains cas, dans nos données elles le sont surtout sur des instances de petite taille.
-  \item les \alpha de 0.9 sont dans notre expérimentation les plus performantes sur la majorité des instances et sont sans concurence sur les grandes instances.
+  \item Les valeurs de $\alpha$ entre 0.1 et 0.3 ne donnent dans mon expérimentation jamais la meilleur solution.
+  \item Les valeurs de $\alpha$ entre 0.5 et 0.7 peuvent être efficaces dans certains cas, dans nos données elles le sont surtout sur des instances de petite taille.
+  \item Les $\alpha$ de 0.9 sont dans notre expérimentation les plus performantes sur la majorité des instances et sont sans concurrence sur les grandes instances.
+\end{itemize}
 
 \noindent
 Présenter sous forme de tableau les résultats finaux obtenus pour les 10 instances sélectionnées.
@@ -500,12 +501,13 @@ Présenter vos contributions aux aspects proposés en bonus.
 \noindent
 Tirer des conclusions en comparant les résultats collectés avec vos deux variantes de métaheuristiques.
 
-En comparant les résultats de GRASP et ReactiveGRASP j'ai pus constater que ReactiveGRASP offre de meilleurs globalement de meilleurs résultats. J'ai aussi remarquer sur le paramétrage que les résultats obtenu avec une limite de temps sont meilleurs que ceux obtenus par un nombre d'itération fixe ce qui n'est pas réel suprenement 
-car il réalise souvent plus d'itération que celle fixé dans ma première expérimentation surtout quand les instances sont petites. Pour finir j'ai pus constater que les valeurs de \alpha les plus élevées sont celles qui donnent les meilleurs résultats dans la majorité des cas.
+En comparant les résultats de GRASP et ReactiveGRASP j'ai pu constater que ReactiveGRASP offre globalement de meilleurs résultats. J'ai aussi remarqué sur le paramétrage que les résultats obtenus avec une limite de temps sont meilleurs que ceux obtenus par un nombre d'itération fixe, ce qui n'est pas réellement surprenant
+car il réalise souvent plus d'itérations que celle fixée dans ma première expérimentation surtout quand les instances sont petites. Pour finir j'ai pu constater que les valeurs de $\alpha$ les plus élevées sont celles qui donnent les meilleurs résultats dans la majorité des cas.
+
 \noindent
 Je recommande l'utilisation de ReactiveGRASP. Son implémentation est facile a mettre en place a partir du GRASP classique et produit des résultats meilleurs ou au moins équivalents dans tous les cas.
-L'auto-ajustement du paramètre alpha est particulièrement intéressant, car il offre un diagnostic sur l'efficacité de notre heuristique de construction. 
-En effet, le fait que les meilleurs résultats soient obtenus avec un alpha petit ou grand indique si notre fonction gloutonne est performante ou si elle est souvent piégée dans des optima locaux, ce qui a été notre cas.
+L'auto-ajustement du paramètre $\alpha$ est particulièrement intéressant, car il offre un diagnostic sur l'efficacité de notre heuristique de construction. 
+En effet, le fait que les meilleurs résultats soient obtenus avec un $\alpha$ petit ou grand indique si notre fonction gloutonne est performante ou si elle est souvent piégée dans des optima locaux, ce qui a été notre cas.
 
 \vfill
 \break
