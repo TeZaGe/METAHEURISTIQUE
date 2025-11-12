@@ -13,7 +13,7 @@ function utility(ensemble, C, A)
     return col_cost > 0 ? C[ensemble] / col_cost : 0.0
 end
 
-function evaluer_solution(solution::Vector{Int}, C::Vector{Int})
+function evaluer_solution(solution::Vector{Int}, C)
     if isempty(solution)
         return 0.0
     end
@@ -21,7 +21,7 @@ function evaluer_solution(solution::Vector{Int}, C::Vector{Int})
     return val
 end
 
-function get_lignes_couvertes(solution::Vector{Int}, A::Matrix{Int})
+function get_lignes_couvertes(solution::Vector{Int,}, A)
     m = size(A, 1) # Nombre de lignes
     lignes_couvertes = zeros(Bool, m)
     for col in solution
@@ -34,7 +34,7 @@ function get_lignes_couvertes(solution::Vector{Int}, A::Matrix{Int})
     return lignes_couvertes
 end
 
-function check_conflit(candidat::Int, lignes_couvertes::Vector{Bool}, A::Matrix{Int})
+function check_conflit(candidat::Int, lignes_couvertes::Vector{Bool}, A)
     m = size(A, 1)
     for i in 1:m
         if A[i, candidat] == 1 && lignes_couvertes[i]
@@ -45,7 +45,7 @@ function check_conflit(candidat::Int, lignes_couvertes::Vector{Bool}, A::Matrix{
 end
 
 
-function construction_gloutonne(C::Vector{Int}, A::Matrix{Int})
+function construction_gloutonne(C,A)
     n = length(C)
     m = size(A, 1)
     solution_final = Int[] 
@@ -79,8 +79,8 @@ function construction_gloutonne(C::Vector{Int}, A::Matrix{Int})
     return solution_final
 end
 
-function greedy_randomized_construction(C::Vector{Int}, 
-                                        A::Matrix{Int}, 
+function greedy_randomized_construction(C, 
+                                        A, 
                                         all_utilities::Vector{Tuple{Int, Float64}},
                                         α::Float64, 
                                         rcl_size::Int=10)
@@ -141,7 +141,7 @@ function greedy_randomized_construction(C::Vector{Int},
     return solution_final
 end
 
-function generer_voisinage_1_1(solution::Vector{Int}, A::Matrix{Int})
+function generer_voisinage_1_1(solution::Vector{Int}, A)
     n = size(A, 2)
     m = size(A, 1)
     
@@ -175,7 +175,7 @@ function generer_voisinage_1_1(solution::Vector{Int}, A::Matrix{Int})
     return collect(voisins_set)
 end
 
-function descente_locale(solution_initiale::Vector{Int}, C::Vector{Int}, A::Matrix{Int})
+function descente_locale(solution_initiale::Vector{Int}, C, A)
     solution_courante = solution_initiale
     amelioration = true
     iteration = 0
@@ -223,8 +223,8 @@ function select_alpha_index(probabilities::Vector{Float64})
     return length(probabilities) 
 end
 
-function grasp(A::Matrix{Int}, 
-               C::Vector{Int}, 
+function grasp(A, 
+               C, 
                total_iterations::Int,
                alpha::Float64,
                all_utilities::Vector{Tuple{Int, Float64}})
@@ -259,8 +259,8 @@ function grasp(A::Matrix{Int},
     return global_best_sol, global_best_val
 end
 
-function reactive_grasp(A::Matrix{Int}, 
-                        C::Vector{Int}, 
+function reactive_grasp(A, 
+                        C, 
                         total_iterations::Int, 
                         update_block_size::Int,
                         all_utilities::Vector{Tuple{Int, Float64}})
@@ -339,6 +339,149 @@ function reactive_grasp(A::Matrix{Int},
     
     return global_best_sol, global_best_val, best_alpha
 end
+
+# Algo génétique 
+
+function selectionParent(population::Vector{Vector{Int}}, C)
+    candidates = rand(1:length(population), 2)
+    best_idx = candidates[1]
+    best_val = evaluer_solution(population[best_idx], C)
+    for idx in candidates[2:end]
+        v = evaluer_solution(population[idx], C)
+        if v > best_val
+            best_idx = idx
+            best_val = v
+        end
+    end
+    return population[best_idx]
+end
+
+function crossover_set(parent1::Vector{Int}, parent2::Vector{Int}, A)
+    s1 = Set(parent1); s2 = Set(parent2)
+    child = collect(intersect(s1,s2))
+    ligne_couverte = get_lignes_couvertes(child, A) 
+
+    # Ajout aléatoire d'éléments des deux parents
+    candidates = shuffle(collect(setdiff(union(s1,s2), Set(child))))
+
+    for c in candidates
+        if !check_conflit(c, ligne_couverte, A) 
+            push!(child, c)
+
+            for i in 1:size(A,1)
+                if A[i,c] == 1
+                    ligne_couverte[i] = true 
+                end
+            end
+        end
+    end
+    sort!(child)
+    return child
+end
+
+function mutation_set(individual::Vector{Int}, n::Int, A, mutation_rate::Float64)
+    if rand() < mutation_rate
+        ligne_couverte_lines = get_lignes_couvertes(individual, A)
+        if rand() < 0.5 && !isempty(individual)
+            popat!(individual, rand(1:length(individual)))
+        else
+            cand = rand(1:n)
+            
+            if !(cand in individual) 
+                if !check_conflit(cand, ligne_couverte_lines, A)
+                    push!(individual, cand)
+                end
+            end
+        end
+        sort!(individual)
+    end
+    return individual
+end
+
+
+function survivantEnfant(enfant1, enfant2, C)
+    val1 = evaluer_solution(enfant1, C)
+    val2 = evaluer_solution(enfant2, C)
+
+    if val1 > val2
+        return enfant1
+    else
+        return enfant2
+    end
+
+end
+
+
+function algoGenetique(population_size, generations, mutation_rate, fname)
+    C, A = loadSPP(fname)
+    n = length(C)
+
+    all_utilities = sort(
+        [(i, utility(i, C, A)) for i in 1:n],
+        by = x -> x[2], 
+        rev = true
+    )
+
+    println("Init population")
+    population = Vector{Vector{Int}}(undef, population_size)
+    for i in 1:population_size
+        alpha_aleatoire = 0.3 + rand() * 0.5 
+        population[i] = greedy_randomized_construction(C, A, all_utilities, alpha_aleatoire, 10)
+    end
+
+    best_individual = population[1]
+    best_value = evaluer_solution(best_individual, C)
+    
+    for i in 2:population_size 
+        individu_actuel = population[i] 
+        val = evaluer_solution(individu_actuel, C)
+        
+        if val > best_value
+            best_value = val
+            best_individual = individu_actuel
+        end
+    end
+    println("Meilleur score initial : $best_value")
+
+    # --- BOUCLE D'ÉVOLUTION ---
+    for gen in 1:generations
+        new_population = Vector{Vector{Int}}()
+
+        #ÉLITISME
+        push!(new_population, best_individual)
+
+        while length(new_population) < population_size
+            parent1 = selectionParent(population, C; )
+            parent2 = selectionParent(population, C;)
+
+            enfant1 = crossover_set(parent1, parent2, A)
+            enfant2 = crossover_set(parent2, parent1, A)
+
+            enfant1 = mutation_set(enfant1, n, A, mutation_rate)
+            enfant2 = mutation_set(enfant2, n, A, mutation_rate)
+
+            survivant = survivantEnfant(enfant1, enfant2, C)
+            push!(new_population, survivant)
+
+            val_survivant = evaluer_solution(survivant, C)
+            if val_survivant > best_value
+                best_value = val_survivant
+                best_individual = survivant
+                if gen % 10 == 0 # Affiche tous les 10 générations
+                    println("Gen $gen: Nouveau meilleur score global = $best_value")
+                end
+            end
+        end
+        population = new_population
+    end
+
+    println("Fin de l'AG. Meilleur score final : $best_value")
+    return best_individual, best_value
+end
+
+fname = "dat/pb 1000rnd0300.dat"
+algoGenetique(200, 500, 0.4, fname)
+
 
 function resoudreSPP(fname)
     C, A = loadSPP(fname)
@@ -427,7 +570,6 @@ end
 
 # fname = "dat/didactic.dat"
 # solution_heuristique = resoudreSPP(fname)
-
 
 function etude_parametres_reactivegrasp(; mode="iterations", total_iterations=200, limit_time=60.0)
     """
@@ -575,7 +717,6 @@ function etude_parametres_reactivegrasp(; mode="iterations", total_iterations=20
     return results
 end
 
-
 function etude_parametres_grasp(; mode="iterations", total_iterations=200, limit_time=60.0)
     """
     Étude de l'influence du paramètre alpha pour GRASP classique.
@@ -683,7 +824,7 @@ end
 
 # Pour lancer l'étude pour GRASP :
 # etude_parametres_grasp(mode="iterations", total_iterations=200)
-etude_parametres_grasp(mode="time", limit_time=60.0)
+# etude_parametres_grasp(mode="time", limit_time=60.0)
 
 
 
