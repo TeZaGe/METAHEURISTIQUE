@@ -2,6 +2,18 @@
 % Document : rendu du IE3
 % Auteur : Xavier Gandibleux
 % Année académique : 2024-2025
+\documentclass[11pt, a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage[a4paper, top=2.5cm, bottom=2.5cm, left=2cm, right=2cm]{geometry}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{multirow} 
+\usepackage{float}    
+\usepackage{graphicx} 
+
+\begin{document}
 
 \section*{Livrable de l'exercice d'implémentation 3 : \\ Battle of metaheuristics}
 
@@ -25,6 +37,16 @@
 \noindent
 Présenter l'algorithme mis en oeuvre. Illustrer sur un exemple didactique (poursuivre avec l'exemple pris en EI1). Présenter vos choix de mise en oeuvre.
 
+\section*{Algorithme Génétique}
+Pour cet exercice d'implémentation, j'ai décidé de mettre en place l'algorithme Génétique; mon algorithme fonctionne avec 4 fonctions principales :
+
+\begin{enumerate}
+    \item \textbf{Sélection des parents : } Cette fonction choisit le meilleur individu entre deux individus créés grâce à la fonction greedy\_randomized\_construction(); le choix est fait en comparant leur coût total.
+    \item \textbf{Croisement : } Cette fonction permet de créer deux nouveaux individus à partir de deux parents sélectionnés avec la fonction de sélection des parents. Pour réaliser le croisement on attribue aléatoirement des éléments des parents aux enfants en veillant à ce que l'enfant respecte la contrainte de couverture des éléments.
+    \item \textbf{Mutation : } On garde les éléments communs, puis on complète aléatoirement avec des éléments non conflictuels de l'union des parents pour obtenir un enfant faisable.
+    \item \textbf{Sélection des enfants : } On sélectionne les meilleurs enfants parmi ceux créés, le choix est fait en comparant leur utilité totale.
+\end{enumerate}
+
 
 %
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -46,19 +68,474 @@ Présenter l'algorithme mis en oeuvre. Illustrer sur un exemple didactique (pour
 \noindent
 Présenter le protocole d'expérimentation (environnement matériel; budget de calcul; condition(s) d'arrêt; réglage des paramètres).
 
+Les algorithmes ont tourné sur la machine suivante :
+\begin{itemize}
+    \item \textbf{Système d'exploitation :} Windows 11
+    \item \textbf{Processeur :} AMD RYZEN 7 5700X 8-Core
+    \item \textbf{Mémoire :} 16Go
+\end{itemize}
+
+\subsection{Budget de calcul et conditions d'arrêt}
+Pour réalisé cette expérimentation, j'ai décidé de procéder comme ceci :
+
+\begin{itemize}
+    \item J'ai selectionné 10 instances plus ou moins grandes du SPP
+    \item J'ai choisi en paramètre de base pour l'algorithme génétique :
+    \begin{itemize}
+        \item Taille de la population : 200
+        \item Nombre de génération : 500
+        \item Taux de mutation : 0.5
+    \end{itemize}
+    \item J'ai choisi de répéter chaque expérimentation 3x pour chaque instances (3x 3 itération de population différente, 3x 3 itération de génération différente, 3x 3 itération de taux de mutation différent)
+    \begin{itemize}
+        \item 5 itération ou on fais varier la taille de la population (100, 150, 200)
+        \item 5 itération ou on fais varier le nombre de génération (100, 250, 500)
+        \item 5 itération ou on fais varier le taux de mutation (0.1, 0.5, 0.7)
+    \end{itemize}
+\end{itemize}
+
 \noindent
 Rapporter graphiquement vos résultats selon $\hat{z}_{min}$, $\hat{z}_{max}$, $\hat{z}_{moy}$ mesurés à intervalles réguliers (exemple de pas de 10 secondes).
+
+\section{Graphique des résultats}
+
+Les résultats sont obtenu avec 3 runs de chaque instances avec les paramètres "classique" défini plus haut.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.8\textwidth]{GRAPH_GENETIQUE.png}
+  \caption{Z\_mean.}
+\end{figure}
 
 \noindent
 Rapporter l'étude de l'influence du paramètre $\alpha$.
 
+\vspace{3mm} 
+\noindent
+Concernant l'Algorithme Génétique (AG), l'influence de ses propres paramètres (étudiés dans le tableau \ref{tab:resultats_ag_complets}) peut être résumée comme suit :
+
+\begin{itemize}
+    \item \textbf{Taille de la population :} Augmenter la population (ex: 100 à 200) a l'impact le plus direct sur le \textbf{temps de calcul} (parfois doublé, cf. \texttt{pb\_200rnd0100.dat}), mais son influence sur la qualité de la solution semble plafonner rapidement (rendements décroissants).
+
+    \item \textbf{Nombre de générations :} Un nombre plus élevé permet à l'algorithme de converger. L'analyse montre que l'essentiel de l'amélioration est souvent obtenu avant 500 générations, suggérant une convergence ou stagnation par la suite pour un coût en temps linéaire.
+
+    \item \textbf{Taux de mutation :} Ce paramètre est apparu comme \textbf{critique pour la qualité}. Un taux trop faible (ex: 0.1) résulte en des solutions de moins bonne qualité (ex: moyenne de 412 pour \texttt{pb\_200rnd0100.dat}) comparé à des taux plus élevés (0.5 ou 0.7, moyenne 404), car il ne permet pas d'échapper aux optima locaux.
+\end{itemize}
+
 \noindent
 Présenter sous forme de tableau les résultats finaux obtenus pour les 10 instances sélectionnées.
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\begin{longtable}{l l c c c c c c c} 
+\caption{Résultats détaillés de l'algorithme génétique par groupe de paramètres.} \label{tab:resultats_ag_complets} \\
+\toprule
+\textbf{Instance} & \textbf{Run Group} & \textbf{Run ID} & \textbf{Repeat} & \textbf{Pop.} & \textbf{Gens.} & \textbf{Mut.} & \textbf{Best} & \textbf{Time (s)} \\
+\midrule
+\endfirsthead 
+\caption[]{Résultats détaillés de l'algorithme génétique par groupe de paramètres (suite)} \\
+\toprule
+\textbf{Instance} & \textbf{Run Group} & \textbf{Run ID} & \textbf{Repeat} & \textbf{Pop.} & \textbf{Gens.} & \textbf{Mut.} & \textbf{Best} & \textbf{Time (s)} \\
+\midrule
+\endhead
+\bottomrule
+\endlastfoot
+%
+% --- Instance: pb_100rnd0100.dat ---
+%
+\multirow{27}{*}{\texttt{dat/pb\_100rnd0100.dat}} & \multirow{9}{*}{pop\_size} & \multirow{3}{*}{1} & 1 & \multirow{3}{*}{100} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 372 & 2.085 \\
+ &  &  & 2 &  &  &  & 372 & 1.87 \\
+ &  &  & 3 &  &  &  & 372 & 1.872 \\
+\cmidrule(lr){3-9} % Ligne partielle pour séparer les run_id
+ &  & \multirow{3}{*}{2} & 1 & \multirow{3}{*}{150} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 372 & 2.825 \\
+ &  &  & 2 &  &  &  & 372 & 2.789 \\
+ &  &  & 3 &  &  &  & 372 & 3.18 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{3} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 372 & 4.425 \\
+ &  &  & 2 &  &  &  & 372 & 4.427 \\
+ &  &  & 3 &  &  &  & 372 & 4.472 \\
+\cmidrule(lr){2-9} % Ligne partielle pour séparer les run_group
+ & \multirow{9}{*}{generations} & \multirow{3}{*}{4} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{100} & \multirow{3}{*}{0.5} & 372 & 1.089 \\
+ &  &  & 2 &  &  &  & 372 & 1.031 \\
+ &  &  & 3 &  &  &  & 372 & 1.018 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{5} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{250} & \multirow{3}{*}{0.5} & 372 & 2.313 \\
+ &  &  & 2 &  &  &  & 372 & 2.299 \\
+ &  &  & 3 &  &  &  & 372 & 2.259 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{6} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 372 & 4.36 \\
+ &  &  & 2 &  &  &  & 372 & 4.383 \\
+ &  &  & 3 &  &  &  & 372 & 4.394 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{mutation} & \multirow{3}{*}{7} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.1} & 372 & 3.518 \\
+ &  &  & 2 &  &  &  & 372 & 3.587 \\
+ &  &  & 3 &  &  &  & 372 & 3.604 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{8} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 372 & 4.35 \\
+ &  &  & 2 &  &  &  & 372 & 4.335 \\
+ &  &  & 3 &  &  &  & 372 & 4.296 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{9} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.7} & 372 & 4.805 \\
+ &  &  & 2 &  &  &  & 372 & 4.706 \\
+ &  &  & 3 &  &  &  & 372 & 4.798 \\
+\midrule % Ligne complète pour séparer les instances
+%
+% --- Instance: pb_200rnd0100.dat ---
+%
+\multirow{27}{*}{\texttt{dat/pb\_200rnd0100.dat}} & \multirow{9}{*}{pop\_size} & \multirow{3}{*}{1} & 1 & \multirow{3}{*}{100} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 409 & 4.075 \\
+ &  &  & 2 &  &  &  & 408 & 3.916 \\
+ &  &  & 3 &  &  &  & 408 & 3.635 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{2} & 1 & \multirow{3}{*}{150} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 404 & 5.569 \\
+ &  &  & 2 &  &  &  & 416 & 6.716 \\
+ &  &  & 3 &  &  &  & 409 & 6.217 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{3} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 412 & 7.481 \\
+ &  &  & 2 &  &  &  & 403 & 7.677 \\
+ &  &  & 3 &  &  &  & 410 & 8.065 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{generations} & \multirow{3}{*}{4} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{100} & \multirow{3}{*}{0.5} & 400 & 1.862 \\
+ &  &  & 2 &  &  &  & 414 & 2.08 \\
+ &  &  & 3 &  &  &  & 403 & 1.895 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{5} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{250} & \multirow{3}{*}{0.5} & 399 & 4.175 \\
+ &  &  & 2 &  &  &  & 403 & 3.912 \\
+ &  &  & 3 &  &  &  & 410 & 4.292 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{6} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 403 & 7.618 \\
+ &  &  & 2 &  &  &  & 408 & 8.045 \\
+ &  &  & 3 &  &  &  & 412 & 7.476 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{mutation} & \multirow{3}{*}{7} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.1} & 414 & 5.702 \\
+ &  &  & 2 &  &  &  & 414 & 5.727 \\
+ &  &  & 3 &  &  &  & 408 & 6.336 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{8} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 399 & 7.634 \\
+ &  &  & 2 &  &  &  & 407 & 7.588 \\
+ &  &  & 3 &  &  &  & 408 & 7.179 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{9} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.7} & 416 & 8.948 \\
+ &  &  & 2 &  &  &  & 399 & 8.201 \\
+ &  &  & 3 &  &  &  & 399 & 8.533 \\
+\midrule
+%
+% --- Instance: pb_500rnd0300.dat ---
+%
+\multirow{27}{*}{\texttt{dat/pb\_500rnd0300.dat}} & \multirow{9}{*}{pop\_size} & \multirow{3}{*}{1} & 1 & \multirow{3}{*}{100} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 744 & 16.545 \\
+ &  &  & 2 &  &  &  & 754 & 16.537 \\
+ &  &  & 3 &  &  &  & 730 & 15.946 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{2} & 1 & \multirow{3}{*}{150} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 737 & 23.973 \\
+ &  &  & 2 &  &  &  & 740 & 24.598 \\
+ &  &  & 3 &  &  &  & 754 & 24.311 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{3} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 744 & 32.789 \\
+ &  &  & 2 &  &  &  & 750 & 32.248 \\
+ &  &  & 3 &  &  &  & 754 & 33.185 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{generations} & \multirow{3}{*}{4} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{100} & \multirow{3}{*}{0.5} & 750 & 9.565 \\
+ &  &  & 2 &  &  &  & 748 & 10.161 \\
+ &  &  & 3 &  &  &  & 750 & 10.005 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{5} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{250} & \multirow{3}{*}{0.5} & 744 & 18.715 \\
+ &  &  & 2 &  &  &  & 740 & 18.231 \\
+ &  &  & 3 &  &  &  & 755 & 18.412 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{6} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 752 & 32.737 \\
+ &  &  & 2 &  &  &  & 750 & 32.339 \\
+ &  &  & 3 &  &  &  & 754 & 33.822 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{mutation} & \multirow{3}{*}{7} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.1} & 752 & 25.956 \\
+ &  &  & 2 &  &  &  & 751 & 26.721 \\
+ &  &  & 3 &  &  &  & 740 & 27.121 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{8} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 754 & 36.276 \\
+ &  &  & 2 &  &  &  & 742 & 34.981 \\
+ &  &  & 3 &  &  &  & 754 & 35.492 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{9} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.7} & 763 & 39.277 \\
+ &  &  & 2 &  &  &  & 732 & 39.005 \\
+ &  &  & 3 &  &  &  & 754 & 39.036 \\
+\midrule
+%
+% --- Instance: pb_500rnd1500.dat ---
+%
+\multirow{27}{*}{\texttt{dat/pb\_500rnd1500.dat}} & \multirow{9}{*}{pop\_size} & \multirow{3}{*}{1} & 1 & \multirow{3}{*}{100} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 1155 & 16.316 \\
+ &  &  & 2 &  &  &  & 1144 & 16.623 \\
+ &  &  & 3 &  &  &  & 1151 & 16.741 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{2} & 1 & \multirow{3}{*}{150} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 1160 & 25.857 \\
+ &  &  & 2 &  &  &  & 1131 & 25.39 \\
+ &  &  & 3 &  &  &  & 1165 & 26.802 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{3} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 1169 & 39.94 \\
+ &  &  & 2 &  &  &  & 1140 & 35.552 \\
+ &  &  & 3 &  &  &  & 1148 & 33.423 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{generations} & \multirow{3}{*}{4} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{100} & \multirow{3}{*}{0.5} & 1162 & 10.513 \\
+ &  &  & 2 &  &  &  & 1162 & 10.668 \\
+ &  &  & 3 &  &  &  & 1165 & 10.434 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{5} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{250} & \multirow{3}{*}{0.5} & 1152 & 19.124 \\
+ &  &  & 2 &  &  &  & 1146 & 19.045 \\
+ &  &  & 3 &  &  &  & 1151 & 18.949 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{6} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 1137 & 33.501 \\
+ &  &  & 2 &  &  &  & 1151 & 33.343 \\
+ &  &  & 3 &  &  &  & 1162 & 32.292 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{mutation} & \multirow{3}{*}{7} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.1} & 1164 & 24.817 \\
+ &  &  & 2 &  &  &  & 1141 & 24.396 \\
+ &  &  & 3 &  &  &  & 1148 & 25.201 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{8} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 1162 & 31.844 \\
+ &  &  & 2 &  &  &  & 1155 & 31.26 \\
+ &  &  & 3 &  &  &  & 1162 & 31.533 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{9} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.7} & 1172 & 34.537 \\
+ &  &  & 2 &  &  &  & 1162 & 35.406 \\
+ &  &  & 3 &  &  &  & 1160 & 38.371 \\
+\midrule
+%
+% --- Instance: pb_500rnd1700.dat ---
+%
+\multirow{27}{*}{\texttt{dat/pb\_500rnd1700.dat}} & \multirow{9}{*}{pop\_size} & \multirow{3}{*}{1} & 1 & \multirow{3}{*}{100} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 168 & 2.572 \\
+ &  &  & 2 &  &  &  & 168 & 2.292 \\
+ &  &  & 3 &  &  &  & 168 & 2.509 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{2} & 1 & \multirow{3}{*}{150} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 185 & 3.74 \\
+ &  &  & 2 &  &  &  & 175 & 3.467 \\
+ &  &  & 3 &  &  &  & 173 & 3.698 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{3} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 185 & 5.241 \\
+ &  &  & 2 &  &  &  & 185 & 5.15 \\
+ &  &  & 3 &  &  &  & 192 & 5.063 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{generations} & \multirow{3}{*}{4} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{100} & \multirow{3}{*}{0.5} & 184 & 1.394 \\
+ &  &  & 2 &  &  &  & 179 & 1.669 \\
+ &  &  & 3 &  &  &  & 163 & 1.354 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{5} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{250} & \multirow{3}{*}{0.5} & 174 & 2.829 \\
+ &  &  & 2 &  &  &  & 188 & 2.931 \\
+ &  &  & 3 &  &  &  & 170 & 3.302 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{6} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 176 & 4.761 \\
+ &  &  & 2 &  &  &  & 167 & 4.565 \\
+ &  &  & 3 &  &  &  & 182 & 5.183 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{mutation} & \multirow{3}{*}{7} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.1} & 174 & 3.881 \\
+ &  &  & 2 &  &  &  & 187 & 4.388 \\
+ &  &  & 3 &  &  &  & 171 & 3.828 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{8} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 188 & 5.251 \\
+ &  &  & 2 &  &  &  & 185 & 5.318 \\
+ &  &  & 3 &  &  &  & 187 & 5.568 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{9} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.7} & 176 & 5.205 \\
+ &  &  & 2 &  &  &  & 182 & 5.651 \\
+ &  &  & 3 &  &  &  & 185 & 6.057 \\
+\midrule
+%
+% --- Instance: pb_200rnd0400.dat ---
+%
+\multirow{27}{*}{\texttt{dat/pb\_200rnd0400.dat}} & \multirow{9}{*}{pop\_size} & \multirow{3}{*}{1} & 1 & \multirow{3}{*}{100} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 62 & 8.658 \\
+ &  &  & 2 &  &  &  & 62 & 8.951 \\
+ &  &  & 3 &  &  &  & 62 & 8.792 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{2} & 1 & \multirow{3}{*}{150} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 62 & 13.227 \\
+ &  &  & 2 &  &  &  & 62 & 13.149 \\
+ &  &  & 3 &  &  &  & 62 & 12.844 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{3} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 63 & 17.865 \\
+ &  &  & 2 &  &  &  & 62 & 17.898 \\
+ &  &  & 3 &  &  &  & 62 & 17.552 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{generations} & \multirow{3}{*}{4} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{100} & \multirow{3}{*}{0.5} & 62 & 4.525 \\
+ &  &  & 2 &  &  &  & 62 & 4.367 \\
+ &  &  & 3 &  &  &  & 62 & 4.594 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{5} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{250} & \multirow{3}{*}{0.5} & 62 & 9.399 \\
+ &  &  & 2 &  &  &  & 62 & 9.809 \\
+ &  &  & 3 &  &  &  & 62 & 9.571 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{6} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 62 & 17.818 \\
+ &  &  & 2 &  &  &  & 62 & 18.936 \\
+ &  &  & 3 &  &  &  & 62 & 18.904 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{mutation} & \multirow{3}{*}{7} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.1} & 62 & 14.524 \\
+ &  &  & 2 &  &  &  & 62 & 14.912 \\
+ &  &  & 3 &  &  &  & 62 & 15.199 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{8} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 62 & 18.753 \\
+ &  &  & 2 &  &  &  & 62 & 19.039 \\
+ &  &  & 3 &  &  &  & 62 & 19.061 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{9} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.7} & 62 & 21.029 \\
+ &  &  & 2 &  &  &  & 62 & 19.966 \\
+ &  &  & 3 &  &  &  & 62 & 20.336 \\
+\midrule
+%
+% --- Instance: pb_200rnd0700.dat ---
+%
+\multirow{27}{*}{\texttt{dat/pb\_200rnd0700.dat}} & \multirow{9}{*}{pop\_size} & \multirow{3}{*}{1} & 1 & \multirow{3}{*}{100} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 990 & 3.417 \\
+ &  &  & 2 &  &  &  & 997 & 3.451 \\
+ &  &  & 3 &  &  &  & 991 & 3.512 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{2} & 1 & \multirow{3}{*}{150} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 991 & 5.452 \\
+ &  &  & 2 &  &  &  & 989 & 5.152 \\
+ &  &  & 3 &  &  &  & 991 & 5.096 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{3} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 992 & 6.857 \\
+ &  &  & 2 &  &  &  & 992 & 6.802 \\
+ &  &  & 3 &  &  &  & 992 & 7.186 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{generations} & \multirow{3}{*}{4} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{100} & \multirow{3}{*}{0.5} & 993 & 2.027 \\
+ &  &  & 2 &  &  &  & 994 & 1.604 \\
+ &  &  & 3 &  &  &  & 991 & 1.61 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{5} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{250} & \multirow{3}{*}{0.5} & 995 & 3.446 \\
+ &  &  & 2 &  &  &  & 989 & 3.386 \\
+ &  &  & 3 &  &  &  & 989 & 3.441 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{6} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 992 & 6.527 \\
+ &  &  & 2 &  &  &  & 986 & 6.435 \\
+ &  &  & 3 &  &  &  & 992 & 6.287 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{mutation} & \multirow{3}{*}{7} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.1} & 991 & 5.655 \\
+ &  &  & 2 &  &  &  & 991 & 5.573 \\
+ &  &  & 3 &  &  &  & 991 & 5.682 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{8} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 989 & 6.831 \\
+ &  &  & 2 &  &  &  & 991 & 6.603 \\
+ &  &  & 3 &  &  &  & 989 & 6.166 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{9} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.7} & 989 & 6.514 \\
+ &  &  & 2 &  &  &  & 992 & 6.998 \\
+ &  &  & 3 &  &  &  & 990 & 7.028 \\
+\midrule
+%
+% --- Instance: pb_1000rnd0100.dat ---
+%
+\multirow{27}{*}{\texttt{dat/pb\_1000rnd0100.dat}} & \multirow{9}{*}{pop\_size} & \multirow{3}{*}{1} & 1 & \multirow{3}{*}{100} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 55 & 3.239 \\
+ &  &  & 2 &  &  &  & 67 & 3.577 \\
+ &  &  & 3 &  &  &  & 67 & 3.578 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{2} & 1 & \multirow{3}{*}{150} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 67 & 5.155 \\
+ &  &  & 2 &  &  &  & 59 & 4.366 \\
+ &  &  & 3 &  &  &  & 67 & 5.143 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{3} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 57 & 5.661 \\
+ &  &  & 2 &  &  &  & 67 & 6.674 \\
+ &  &  & 3 &  &  &  & 67 & 6.724 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{generations} & \multirow{3}{*}{4} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{100} & \multirow{3}{*}{0.5} & 59 & 2.298 \\
+ &  &  & 2 &  &  &  & 59 & 2.533 \\
+ &  &  & 3 &  &  &  & 57 & 2.385 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{5} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{250} & \multirow{3}{*}{0.5} & 56 & 3.557 \\
+ &  &  & 2 &  &  &  & 67 & 4.089 \\
+ &  &  & 3 &  &  &  & 59 & 3.578 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{6} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 67 & 6.717 \\
+ &  &  & 2 &  &  &  & 67 & 6.715 \\
+ &  &  & 3 &  &  &  & 67 & 6.804 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{mutation} & \multirow{3}{*}{7} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.1} & 57 & 4.606 \\
+ &  &  & 2 &  &  &  & 67 & 5.417 \\
+ &  &  & 3 &  &  &  & 59 & 4.444 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{8} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 67 & 6.782 \\
+ &  &  & 2 &  &  &  & 67 & 6.668 \\
+ &  &  & 3 &  &  &  & 67 & 6.661 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{9} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.7} & 59 & 6.144 \\
+ &  &  & 2 &  &  &  & 57 & 6.345 \\
+ &  &  & 3 &  &  &  & 59 & 6.175 \\
+\midrule
+%
+% --- Instance: pb_1000rnd0300.dat ---
+%
+\multirow{27}{*}{\texttt{dat/pb\_1000rnd0300.dat}} & \multirow{9}{*}{pop\_size} & \multirow{3}{*}{1} & 1 & \multirow{3}{*}{100} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 589 & 24.005 \\
+ &  &  & 2 &  &  &  & 581 & 24.138 \\
+ &  &  & 3 &  &  &  & 593 & 24.226 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{2} & 1 & \multirow{3}{*}{150} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 599 & 34.225 \\
+ &  &  & 2 &  &  &  & 604 & 35.242 \\
+ &  &  & 3 &  &  &  & 593 & 31.314 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{3} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 579 & 41.95 \\
+ &  &  & 2 &  &  &  & 592 & 42.788 \\
+ &  &  & 3 &  &  &  & 588 & 42.55 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{generations} & \multirow{3}{*}{4} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{100} & \multirow{3}{*}{0.5} & 598 & 16.965 \\
+ &  &  & 2 &  &  &  & 608 & 16.777 \\
+ &  &  & 3 &  &  &  & 596 & 16.58 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{5} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{250} & \multirow{3}{*}{0.5} & 616 & 27.418 \\
+ &  &  & 2 &  &  &  & 625 & 27.736 \\
+ &  &  & 3 &  &  &  & 595 & 26.014 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{6} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 597 & 48.604 \\
+ &  &  & 2 &  &  &  & 592 & 49.824 \\
+ &  &  & 3 &  &  &  & 608 & 52.782 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{mutation} & \multirow{3}{*}{7} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.1} & 633 & 41.84 \\
+ &  &  & 2 &  &  &  & 604 & 38.161 \\
+ &  &  & 3 &  &  &  & 612 & 40.256 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{8} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 609 & 45.487 \\
+ &  &  & 2 &  &  &  & 617 & 42.64 \\
+ &  &  & 3 &  &  &  & 590 & 50.089 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{9} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.7} & 599 & 54.801 \\
+ &  &  & 2 &  &  &  & 594 & 56.423 \\
+ &  &  & 3 &  &  &  & 598 & 53.568 \\
+\midrule
+%
+% --- Instance: didactic.dat ---
+%
+\multirow{27}{*}{\texttt{dat/didactic.dat}} & \multirow{9}{*}{pop\_size} & \multirow{3}{*}{1} & 1 & \multirow{3}{*}{100} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 30 & 0.149 \\
+ &  &  & 2 &  &  &  & 30 & 0.122 \\
+ &  &  & 3 &  &  &  & 30 & 0.132 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{2} & 1 & \multirow{3}{*}{150} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 30 & 0.2 \\
+ &  &  & 2 &  &  &  & 30 & 0.178 \\
+ &  &  & 3 &  &  &  & 30 & 0.182 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{3} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 30 & 0.251 \\
+ &  &  & 2 &  &  &  & 30 & 0.242 \\
+ &  &  & 3 &  &  &  & 30 & 0.269 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{generations} & \multirow{3}{*}{4} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{100} & \multirow{3}{*}{0.5} & 30 & 0.068 \\
+ &  &  & 2 &  &  &  & 30 & 0.07 \\
+ &  &  & 3 &  &  &  & 30 & 0.059 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{5} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{250} & \multirow{3}{*}{0.5} & 30 & 0.137 \\
+ &  &  & 2 &  &  &  & 30 & 0.13 \\
+ &  &  & 3 &  &  &  & 30 & 0.127 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{6} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 30 & 0.236 \\
+ &  &  & 2 &  &  &  & 30 & 0.264 \\
+ &  &  & 3 &  &  &  & 30 & 0.244 \\
+\cmidrule(lr){2-9}
+ & \multirow{9}{*}{mutation} & \multirow{3}{*}{7} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.1} & 30 & 0.24 \\
+ &  &  & 2 &  &  &  & 30 & 0.245 \\
+ &  &  & 3 &  &  &  & 30 & 0.244 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{8} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.5} & 30 & 0.257 \\
+ &  &  & 2 &  &  &  & 30 & 0.276 \\
+ &  &  & 3 &  &  &  & 30 & 0.249 \\
+\cmidrule(lr){3-9}
+ &  & \multirow{3}{*}{9} & 1 & \multirow{3}{*}{200} & \multirow{3}{*}{500} & \multirow{3}{*}{0.7} & 30 & 0.258 \\
+ &  &  & 2 &  &  &  & 30 & 0.269 \\
+ &  &  & 3 &  &  &  & 30 & 0.26 \\
+% \bottomrule % Commenté car \endlastfoot contient déjà \bottomrule
+\end{longtable}
+
+
 
 %
 % -----------------------------------------------------------------------------------------------------------------------------------------------------
 %
-
 \vspace{5mm}
 \noindent
 \fbox{
@@ -76,5 +553,15 @@ Présenter sous forme de tableau les résultats finaux obtenus pour les 10 insta
 Tirer des conclusions en comparant les résultats collectés avec vos deux métaheuristiques.
 
 \noindent
+En comparant les résultats obtenus avec GRASP et l'algorithme génétique, on observe un point commun : les deux méthodes tendent à produire de meilleures solutions lorsque que l'aléatoire est important (alpha élevé pour GRASP, taux de mutation élevé pour l'algorithme génétique). Toutefois, l'algorithme génétique présente, dans notre étude, de meilleures performances sur la majorité des instances testées. Cet avantage est particulièrement visible pour les instances de grande taille (par exemple \texttt{pb\_1000rnd0300.dat}).
+
+
+\noindent
 Quelles sont les recommandations que vous émettez à l'issue de l'étude?
 
+\noindent
+Sur la base des expériences menées, je recommande l'utilisation de l'algorithme génétique : il a fourni les meilleurs résultats dans la plupart des cas étudiés. Il reste néanmoins possible d'améliorer encore ses performances en affinant la sélection des parents et les opérateurs de croisement.
+Il faut aussi garder à l'esprit un inconvénient pratique : l'algorithme génétique comporte plusieurs hyperparamètres (taille de la population, nombre de générations, taux de mutation), ce qui rend le réglage plus exigeant que pour GRASP, dont le paramètre principal est $\alpha$ (ou la liste d'alpha en Reactive GRASP). En conséquence, si le temps et les ressources de calibration sont limités, GRASP reste une option intéressante pour sa simplicité.
+
+
+\end{document}

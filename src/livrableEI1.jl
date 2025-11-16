@@ -2,10 +2,13 @@ using JuMP
 using GLPK
 using LinearAlgebra
 using Random 
+using Statistics
 
 include("loadSPP.jl")
 include("setSPP.jl")
 include("getfname.jl")
+
+# ------------------ Fonction Glouton  Livrable1 ------------------
 
 function utility(ensemble, C, A)
     
@@ -79,67 +82,6 @@ function construction_gloutonne(C,A)
     return solution_final
 end
 
-function greedy_randomized_construction(C, 
-                                        A, 
-                                        all_utilities::Vector{Tuple{Int, Float64}},
-                                        α::Float64, 
-                                        rcl_size::Int=10)
-    
-    n = length(C)
-    m = size(A, 1)
-    elements = zeros(Bool, m)  
-    solution_final = Int[]
-    available_utilities = copy(all_utilities)
-    
-    while true
-        u_min = Inf
-        u_max = -Inf
-        valid_candidates = Tuple{Int, Float64}[]
-
-        for (i, util) in available_utilities
-            # Vérification de conflit (simple boucle)
-            a_conflit = false
-            for j in 1:m
-                if A[j, i] == 1 && elements[j]
-                    a_conflit = true
-                    break
-                end
-            end
-            
-            if !a_conflit
-                push!(valid_candidates, (i, util))
-                u_min = min(u_min, util)
-                u_max = max(u_max, util)
-            end
-        end
-        
-        if isempty(valid_candidates); break; end
-
-        uLimit = u_min + α * (u_max - u_min)
-        rcl = Int[]
-        for (i, util) in valid_candidates
-            if util >= uLimit
-                push!(rcl, i)
-            end
-        end
-
-        if isempty(rcl); break; end
-
-        e = rand(rcl) 
-
-        push!(solution_final, e)
-        
-        for j in 1:m
-            if A[j, e] == 1
-                elements[j] = true
-            end
-        end
-        
-        filter!(x -> x[1] != e, available_utilities)
-    end
-
-    return solution_final
-end
 
 function generer_voisinage_1_1(solution::Vector{Int}, A)
     n = size(A, 2)
@@ -209,6 +151,70 @@ function descente_locale(solution_initiale::Vector{Int}, C, A)
     end
     
     return solution_courante
+end
+
+# ------------------ GRASP Classique et Réactif Livrable2 ------------------
+
+function greedy_randomized_construction(C, 
+                                        A, 
+                                        all_utilities::Vector{Tuple{Int, Float64}},
+                                        α::Float64, 
+                                        rcl_size::Int=10)
+    
+    n = length(C)
+    m = size(A, 1)
+    elements = zeros(Bool, m)  
+    solution_final = Int[]
+    available_utilities = copy(all_utilities)
+    
+    while true
+        u_min = Inf
+        u_max = -Inf
+        valid_candidates = Tuple{Int, Float64}[]
+
+        for (i, util) in available_utilities
+            # Vérification de conflit (simple boucle)
+            a_conflit = false
+            for j in 1:m
+                if A[j, i] == 1 && elements[j]
+                    a_conflit = true
+                    break
+                end
+            end
+            
+            if !a_conflit
+                push!(valid_candidates, (i, util))
+                u_min = min(u_min, util)
+                u_max = max(u_max, util)
+            end
+        end
+        
+        if isempty(valid_candidates); break; end
+
+        uLimit = u_min + α * (u_max - u_min)
+        rcl = Int[]
+        for (i, util) in valid_candidates
+            if util >= uLimit
+                push!(rcl, i)
+            end
+        end
+
+        if isempty(rcl); break; end
+
+        e = rand(rcl) 
+
+        push!(solution_final, e)
+        
+        for j in 1:m
+            if A[j, e] == 1
+                elements[j] = true
+            end
+        end
+        
+        filter!(x -> x[1] != e, available_utilities)
+    end
+
+    return solution_final
 end
 
 function select_alpha_index(probabilities::Vector{Float64})
@@ -340,7 +346,7 @@ function reactive_grasp(A,
     return global_best_sol, global_best_val, best_alpha
 end
 
-# Algo génétique 
+# ------------------ Algorithme Génétique  Livrable3 ------------------
 
 function selectionParent(population::Vector{Vector{Int}}, C)
     candidates = rand(1:length(population), 2)
@@ -357,8 +363,8 @@ function selectionParent(population::Vector{Vector{Int}}, C)
 end
 
 function crossover_set(parent1::Vector{Int}, parent2::Vector{Int}, A)
-    s1 = Set(parent1); s2 = Set(parent2)
-    child = collect(intersect(s1,s2))
+    s1 = Set(parent1); s2 = Set(parent2) 
+    child = collect(intersect(s1,s2)) 
     ligne_couverte = get_lignes_couvertes(child, A) 
 
     # Ajout aléatoire d'éléments des deux parents
@@ -398,7 +404,6 @@ function mutation_set(individual::Vector{Int}, n::Int, A, mutation_rate::Float64
     return individual
 end
 
-
 function survivantEnfant(enfant1, enfant2, C)
     val1 = evaluer_solution(enfant1, C)
     val2 = evaluer_solution(enfant2, C)
@@ -410,7 +415,6 @@ function survivantEnfant(enfant1, enfant2, C)
     end
 
 end
-
 
 function algoGenetique(population_size, generations, mutation_rate, fname)
     C, A = loadSPP(fname)
@@ -479,9 +483,7 @@ function algoGenetique(population_size, generations, mutation_rate, fname)
     return best_individual, best_value
 end
 
-fname = "dat/pb 1000rnd0300.dat"
-algoGenetique(200, 500, 0.4, fname)
-
+# ------------------ Appel des fonctions ------------------
 
 function resoudreSPP(fname)
     C, A = loadSPP(fname)
@@ -518,7 +520,6 @@ function resoudreSPP(fname)
     println("Solution finale (heuristique) : ", solution_finale)
     println("Temps CPU Reactive GRASP (s): ", cpu_time)
 end
-
 
 function experimentationSPP()
     instances = [
@@ -566,12 +567,7 @@ function experimentationSPP()
     end
 end
 
-# experimentationSPP()
-
-# fname = "dat/didactic.dat"
-# solution_heuristique = resoudreSPP(fname)
-
-function etude_parametres_reactivegrasp(; mode="iterations", total_iterations=200, limit_time=60.0)
+function etude_reactivegrasp(; mode="iterations", total_iterations=200, limit_time=60.0)
     """
     - mode="iterations" : chaque run utilise un nombre fixe d'itérations (total_iterations)
     - mode="time" : chaque run s'arrête après limit_time secondes
@@ -717,7 +713,7 @@ function etude_parametres_reactivegrasp(; mode="iterations", total_iterations=20
     return results
 end
 
-function etude_parametres_grasp(; mode="iterations", total_iterations=200, limit_time=60.0)
+function etude_grasp(; mode="iterations", total_iterations=200, limit_time=60.0)
     """
     Étude de l'influence du paramètre alpha pour GRASP classique.
     - mode="iterations" : chaque run utilise un nombre fixe d'itérations.
@@ -819,12 +815,130 @@ function etude_parametres_grasp(; mode="iterations", total_iterations=200, limit
     return results
 end
 
-# etude_parametres_reactivegrasp(mode="iterations", total_iterations=200)
-# etude_parametres_reactivegrasp(mode="time", limit_time=60.0)
+function etude_AG(; repeats::Int)
+    instances = [
+        "dat/pb_100rnd0100.dat",
+        "dat/pb_200rnd0100.dat",
+        "dat/pb_500rnd0300.dat",
+        "dat/pb_500rnd1500.dat",
+        "dat/pb_500rnd1700.dat",
+        "dat/pb_200rnd0400.dat",
+        "dat/pb_200rnd0700.dat",
+        "dat/pb_1000rnd0100.dat",
+        "dat/pb_1000rnd0300.dat",
+        "dat/didactic.dat"
+    ]
+
+    base_pop = 200
+    base_gen = 500
+    base_mut = 0.5
+
+    pop_sizes = [100, 150, 200]     
+    gens      = [100, 250, 500]         
+    muts      = [0.1, 0.5, 0.7]         
+
+    all_results = []
+
+    println("Starting etude_AG with repeats=$repeats")
+    for fname in instances
+        println("\n=== Instance : $fname ===")
+        results = []
+        run_idx = 1
+
+        # On change la population_size
+        for ps in pop_sizes
+            for rep in 1:repeats
+                t_start = time()
+                _, val = algoGenetique(ps, base_gen, base_mut, fname)
+                t_end = time()
+                push!(results, (
+                    instance = fname,
+                    run_group = "pop_size",
+                    run_id = run_idx,
+                    repeat = rep,
+                    population_size = ps,
+                    generations = base_gen,
+                    mutation_rate = base_mut,
+                    best_value = val,
+                    cpu_time = t_end - t_start
+                ))
+            end
+            run_idx += 1
+        end
+
+        # on change les generations size
+        for g in gens
+            for rep in 1:repeats
+                t_start = time()
+                _, val = algoGenetique(base_pop, g, base_mut, fname)
+                t_end = time()
+                push!(results, (
+                    instance = fname,
+                    run_group = "generations",
+                    run_id = run_idx,
+                    repeat = rep,
+                    population_size = base_pop,
+                    generations = g,
+                    mutation_rate = base_mut,
+                    best_value = val,
+                    cpu_time = t_end - t_start
+                ))
+            end
+            run_idx += 1
+        end
+
+        # on change les mutation rates
+        for mu in muts
+            for rep in 1:repeats
+                t_start = time()
+                _, val = algoGenetique(base_pop, base_gen, mu, fname)
+                t_end = time()
+                push!(results, (
+                    instance = fname,
+                    run_group = "mutation",
+                    run_id = run_idx,
+                    repeat = rep,
+                    population_size = base_pop,
+                    generations = base_gen,
+                    mutation_rate = mu,
+                    best_value = val,
+                    cpu_time = t_end - t_start
+                ))
+            end
+            run_idx += 1
+        end
+        append!(all_results, results)
+    end
+
+    println("\n### TABLEAU RESULTATS COMPLET (copier-coller) ###")
+    println("instance\trun_group\trun_id\trepeat\tpopulation_size\tgenerations\tmutation_rate\tbest_value\tcpu_time")
+    for r in all_results
+        println("$(r.instance)\t$(r.run_group)\t$(r.run_id)\t$(r.repeat)\t$(r.population_size)\t$(r.generations)\t$(r.mutation_rate)\t$(r.best_value)\t$(round(r.cpu_time, digits=3))")
+    end
+
+    return all_results
+end
+
+# fname = "dat/pb 1000rnd0300.dat"
+# algoGenetique(200, 500, 0.4, fname)
+
+# experimentationSPP()
+
+# fname = "dat/didactic.dat"
+# solution_heuristique = resoudreSPP(fname)
+
+# etude_reactivegrasp(mode="iterations", total_iterations=200)
+# etude_reactivegrasp(mode="time", limit_time=60.0)
 
 # Pour lancer l'étude pour GRASP :
-# etude_parametres_grasp(mode="iterations", total_iterations=200)
-# etude_parametres_grasp(mode="time", limit_time=60.0)
+# etude_grasp(mode="iterations", total_iterations=200)
+# etude_grasp(mode="time", limit_time=60.0)
+
+# Pour lancer l'étude pour l'algorithme génétique :
+# etude_AG(repeats=3)
+
+
+
 
 
 
