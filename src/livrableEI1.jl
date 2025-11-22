@@ -47,7 +47,6 @@ function check_conflit(candidat::Int, lignes_couvertes::Vector{Bool}, A)
     return false # Pas de conflit
 end
 
-
 function construction_gloutonne(C,A)
     n = length(C)
     m = size(A, 1)
@@ -82,7 +81,6 @@ function construction_gloutonne(C,A)
     return solution_final
 end
 
-
 function generer_voisinage_1_1(solution::Vector{Int}, A)
     n = size(A, 2)
     m = size(A, 1)
@@ -93,19 +91,16 @@ function generer_voisinage_1_1(solution::Vector{Int}, A)
     # 1-1 : Échanger un élément avec un candidat
     for s in solution
         
-        # 1. Créer la solution de base (sans 's')
         sol_temp = [x for x in solution if x != s]
         
-        # 2. Calculer les lignes couvertes par cette solution de base
+        #Calculer les lignes couvertes par cette solution de base
         lignes_couvertes_temp = get_lignes_couvertes(sol_temp, A)
 
-        # 3. Essayer d'ajouter chaque candidat (de 1 à n)
         for cand in 1:n
             if cand in solution_set
                 continue
             end
             
-            # 4. Vérifier le conflit du candidat (simple boucle)
             if !check_conflit(cand, lignes_couvertes_temp, A)
                 # Si pas de conflit, c'est un voisin valide
                 new_sol = sort(vcat(sol_temp, cand))
@@ -173,7 +168,7 @@ function greedy_randomized_construction(C,
         valid_candidates = Tuple{Int, Float64}[]
 
         for (i, util) in available_utilities
-            # Vérification de conflit (simple boucle)
+            # Vérification de conflit
             a_conflit = false
             for j in 1:m
                 if A[j, i] == 1 && elements[j]
@@ -487,38 +482,15 @@ end
 
 function resoudreSPP(fname)
     C, A = loadSPP(fname)
-    n = length(C)
     
-    println("Pré-calcul des Utilités (une seule fois)")
-    all_utilities = sort(
-        [(i, utility(i, C, A)) for i in 1:n],
-        by = x -> x[2], 
-        rev = true
-    )
-
     solution_gloutonne = construction_gloutonne(C, A)
     valeur_glout = evaluer_solution(solution_gloutonne, C)
     println("Valeur gloutonne (z) : ", valeur_glout)
+    solution_finale = descente_locale(solution_gloutonne, C, A)
+    valeur_heur = evaluer_solution(solution_finale, C)
 
-    t_start = time()
-
-    TOTAL_ITERATIONS = 200  
-    UPDATE_BLOCK = 20       
-
-    (solution_finale, valeur_heur, best_alpha) = reactive_grasp(
-        A, C,
-        TOTAL_ITERATIONS,
-        UPDATE_BLOCK,
-        all_utilities
-    )
-
-    t_end = time()
-    cpu_time = t_end - t_start
-
-    println("\n--- Fin de resoudreSPP ---")
     println("Valeur heuristique (^z) : ", valeur_heur)
     println("Solution finale (heuristique) : ", solution_finale)
-    println("Temps CPU Reactive GRASP (s): ", cpu_time)
 end
 
 function experimentationSPP()
@@ -535,19 +507,18 @@ function experimentationSPP()
         "dat/didactic.dat"
     ]
 
-    # 2. Boucle sur les instances
     for fname in instances
         try
             C, A = loadSPP(fname)
             instance_name = basename(fname)
 
-            # --- 3a. Glouton ---
+            # --- Glouton ---
             t_start_glouton = time()
             sol_glouton = construction_gloutonne(C, A)
             t_glouton = time() - t_start_glouton
             z_glouton = evaluer_solution(sol_glouton, C)
 
-            # --- 3b. Descente Locale (1-1) ---
+            # --- Descente Locale (1-1) ---
             t_start_local = time()
             sol_local = descente_locale(sol_glouton, C, A) 
             t_local = time() - t_start_local
@@ -924,7 +895,7 @@ end
 
 # experimentationSPP()
 
-# fname = "dat/didactic.dat"
+# fname = "dat/pb_1000rnd0300.dat"
 # solution_heuristique = resoudreSPP(fname)
 
 # etude_reactivegrasp(mode="iterations", total_iterations=200)
