@@ -925,7 +925,7 @@ function etude_AG(; repeats::Int)
 end
 
 # ----- Instance à résoudre -----
-fname = "dat/pb 1000rnd0300.dat"
+fname = "dat/pb_200rnd0700.dat"
 
 
 #------ Appel Livrabel1 ------
@@ -935,8 +935,13 @@ resoudreSPP(fname)
 #------ Appel Livrabel2 ------
 # resoudreGRASP(fname, 0.4, 200)
 # resoudreREACRIVEGRASP(fname, 200, 20)
+
 # etude_grasp(mode="iterations", total_iterations=200)
 # etude_reactivegrasp(mode="iterations", total_iterations=200)
+
+# etude_grasp(mode="time", limit_time=60.0) 
+# etude_reactivegrasp(mode="time", limit_time=60.0)
+
 
 #------ Appel Livrabel3 ------
 # resoudreAG(fname, 200, 500, 0.4)
