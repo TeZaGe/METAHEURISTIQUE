@@ -493,6 +493,40 @@ function resoudreSPP(fname)
     println("Solution finale (heuristique) : ", solution_finale)
 end
 
+function resoudreGRASP(fname, alpha::Float64, total_iterations::Int)
+    C, A = loadSPP(fname)
+    n = length(C)
+    all_utilities = sort(
+        [(i, utility(i, C, A)) for i in 1:n],
+        by = x -> x[2],
+        rev = true
+    )
+    sol_grasp, val_grasp = grasp(A, C, total_iterations, alpha, all_utilities)
+    println("Valeur GRASP (z*) : ", val_grasp)
+    println("Solution GRASP : ", sol_grasp)
+end
+
+function resoudreREACRIVEGRASP(fname, total_iterations::Int, update_block_size::Int)
+    C, A = loadSPP(fname)
+    n = length(C)
+    all_utilities = sort(
+        [(i, utility(i, C, A)) for i in 1:n],
+        by = x -> x[2],
+        rev = true
+    )
+    sol_reactive, val_reactive, best_alpha = reactive_grasp(A, C, total_iterations, update_block_size, all_utilities)
+    println("Valeur Reactive GRASP (z^*) : ", val_reactive)
+    println("Solution Reactive GRASP : ", sol_reactive)
+    println("Meilleur alpha final : ", best_alpha)
+end
+
+function resoudreAG(fname, population_size::Int, generations::Int, mutation_rate::Float64)
+    best_individual, best_value = algoGenetique(population_size, generations, mutation_rate, fname)
+    println("Valeur AG (z_AG) : ", best_value)
+    println("Solution AG : ", best_individual)
+end
+
+
 function experimentationSPP()
     instances = [
         "dat/pb_100rnd0100.dat",
@@ -890,23 +924,25 @@ function etude_AG(; repeats::Int)
     return all_results
 end
 
-# fname = "dat/pb 1000rnd0300.dat"
-# algoGenetique(200, 500, 0.4, fname)
+# ----- Instance à résoudre -----
+fname = "dat/pb 1000rnd0300.dat"
 
+
+#------ Appel Livrabel1 ------
+resoudreSPP(fname)
 # experimentationSPP()
 
-# fname = "dat/pb_1000rnd0300.dat"
-# solution_heuristique = resoudreSPP(fname)
-
-# etude_reactivegrasp(mode="iterations", total_iterations=200)
-# etude_reactivegrasp(mode="time", limit_time=60.0)
-
-# Pour lancer l'étude pour GRASP :
+#------ Appel Livrabel2 ------
+# resoudreGRASP(fname, 0.4, 200)
+# resoudreREACRIVEGRASP(fname, 200, 20)
 # etude_grasp(mode="iterations", total_iterations=200)
-# etude_grasp(mode="time", limit_time=60.0)
+# etude_reactivegrasp(mode="iterations", total_iterations=200)
 
-# Pour lancer l'étude pour l'algorithme génétique :
+#------ Appel Livrabel3 ------
+# resoudreAG(fname, 200, 500, 0.4)
 # etude_AG(repeats=3)
+
+
 
 
 
